@@ -14,8 +14,12 @@
     "@types/jsdom": "^16.2.13",
     "@types/needle": "^2.5.2",
     "@types/node": "^16.7.10",
+    "axios": "^0.24.0",
+    "fastify": "^3.21.0",
+    "graphql": "^15.5.3",
     "jsdom": "^17.0.0",
-    "needle": "^3.0.0",
+    "mercurius": "^8.2.1",
+    "mercurius-codegen": "^3.0.0",
     "ts-node": "^10.2.1",
     "typescript": "^4.4.2"
   },

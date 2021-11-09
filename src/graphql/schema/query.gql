@@ -1,0 +1,5 @@
+
+type Query {
+  hello(name: String!): String!
+  timetable(schoolId: Int!, classId: Int!, week: Int): Timetable!
+}

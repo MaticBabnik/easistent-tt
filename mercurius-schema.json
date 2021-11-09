@@ -1,0 +1,4 @@
+[
+  "type Query {\n  hello(name: String!): String!\n  timetable(schoolId: Int!, classId: Int!, week: Int): Timetable!\n}",
+  "type TimeSpan {\n  from: String\n  to: String\n}\n\nenum LessonFlag {\n  SUBSTITUTE\n  REPLACEMENT\n  CANCELED\n  NOTDONE\n  EVENT\n  OFFICEHOURS\n  HALFTIME\n  CLUB\n  ONLINE\n  EXAM\n}\n\ntype Lesson {\n  name: String!\n  teacher: String\n  room: String\n  flags: [LessonFlag]\n}\n\ntype Day {\n  lessons: [[Lesson]]\n}\n\ntype Timetable {\n  schoolId: Int!\n  classId: Int!\n  week: Int!\n  scheduleDefinitions: [TimeSpan]\n  days: [Day]\n}"
+]

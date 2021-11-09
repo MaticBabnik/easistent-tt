@@ -1,0 +1,36 @@
+type TimeSpan {
+  from: String
+  to: String
+}
+
+enum LessonFlag {
+  SUBSTITUTE
+  REPLACEMENT
+  CANCELED
+  NOTDONE
+  EVENT
+  OFFICEHOURS
+  HALFTIME
+  CLUB
+  ONLINE
+  EXAM
+}
+
+type Lesson {
+  name: String!
+  teacher: String
+  room: String
+  flags: [LessonFlag]
+}
+
+type Day {
+  lessons: [[Lesson]]
+}
+
+type Timetable {
+  schoolId: Int!
+  classId: Int!
+  week: Int!
+  scheduleDefinitions: [TimeSpan]
+  days: [Day]
+}
