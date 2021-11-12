@@ -9,7 +9,8 @@ const requestOptions: AxiosRequestConfig<any> = { headers, maxRedirects: 5 };
 
 export interface Timetable {
     schoolId: number,
-    classId: number,
+    classId?: number,
+    classroomId?: number,
     week: number,
     scheduleDefinitions: TimeSpan[]
     days: Day[]
@@ -133,7 +134,7 @@ function parseTimeRange(timeRangeElement: HTMLDivElement) {
 
 //30a1b45414856e5598f2d137a5965d5a4ad36826
 export async function getClasses(schoolPublicTimetableID: string, fullUrl?: boolean) {
-    const url = fullUrl ? schoolPublicTimetableID : `https://www.easistent.com/urniki/${schoolPublicTimetableID}`;
+    const url = fullUrl ? schoolPublicTimetableID : `https://www.easistent.com/urniki/${schoolPublicTimetableID}`; //TODO: full url is kinda useless
 
     const response = await axios.get(`https://urnik.vegova.si/`, requestOptions);
 
@@ -148,9 +149,23 @@ export async function getClasses(schoolPublicTimetableID: string, fullUrl?: bool
 
     return classMap;
 }
+export async function getClassrooms(schoolPublicTimetableID: string) {
+    const url = `https://www.easistent.com/urniki/${schoolPublicTimetableID}/ucilnice`;
 
-export async function getTimetable(classId: number, schoolId: number, week?: number): Promise<Timetable> {
-    console.log(`getting timetable ${schoolId}-${classId}`)
+    const response = await axios.get(url, requestOptions);
+
+    const doc = (new JSDOM(response.data)).window.document;
+    const classroomElements = doc.querySelectorAll('select#id_parameter>option') as NodeListOf<HTMLOptionElement>;
+    if (!classroomElements || classroomElements.length == 0) throw "No classrooms found";
+
+    const classroomMap: { [key: string]: number } = {};
+
+    classroomElements.forEach(x => classroomMap[x.innerHTML.trim()] = parseInt(x.value));
+
+    return classroomMap;
+}
+
+export async function getTimetable(classId: number, classroomId: number, schoolId: number, week?: number): Promise<Timetable> {
     if (typeof week !== 'number')
         week = dateToSchoolWeek(new Date());
 
@@ -159,13 +174,16 @@ export async function getTimetable(classId: number, schoolId: number, week?: num
         "id_razred": classId,
         "id_profesor": 0,
         "id_dijak": 0,
-        "id_ucilnica": 0,
+        "id_ucilnica": classroomId,
         "id_interesna_dejavnost": 0,
         "teden": week,
         "qversion": 1
     }
 
-    const timetable: Timetable = { scheduleDefinitions: [], days: [], schoolId, classId, week: week ?? 0 };
+    const timetable: Timetable = { scheduleDefinitions: [], days: [], schoolId, week: week };
+    if (classroomId != 0) timetable.classroomId = classroomId;
+    if (classId != 0) timetable.classId = classId;
+
     let response;
     try {
         const body = new URLSearchParams(formData);
@@ -194,7 +212,7 @@ function ms(n: number) {
 }
 
 function delayStart<P extends Array<any>, R>(func: (...args: P) => Promise<R>, delay: number, ...args: P): Promise<R> {
-    return new Promise((reject, resolve) => {
+    return new Promise((resolve, reject) => {
         setTimeout(() => {
             func(...args).then(resolve).catch(reject);
         }, delay)
@@ -203,25 +221,23 @@ function delayStart<P extends Array<any>, R>(func: (...args: P) => Promise<R>, d
 
 async function test() {
     const classes = await getClasses('30a1b45414856e5598f2d137a5965d5a4ad36826');
+    const classrooms = await getClassrooms('30a1b45414856e5598f2d137a5965d5a4ad36826');
 
-    console.log({ classes });
+    // console.log({ classes, classrooms });
 
-    let arr = Object.values(classes);
+    // let roomIds = [...Object.values(classes),...Object.values(classes),...Object.values(classes),...Object.values(classes)];
 
-    let promises = [];
-    let delay = 0;
-    for (let x of arr) {
-        promises.push(delayStart(getTimetable, delay, 182, x));
-        delay += 1000;
-    }
+    // let promises = [];
+    // let delay = 0;
+    // for (let x of roomIds) {
+    //     promises.push(delayStart(getTimetable, delay, x, 0, 182));
+    //     // delay += 1000;
+    // }
 
-    console.log(await Promise.allSettled(promises));
 
-    // getTimetable(settings.classes.R3A, settings.school.id, 1).then(x => {
-    //     console.log(inspect(x, false, null, true))
-
-    // })
-
+    // console.log(await Promise.allSettled(promises));
+    const a = await getTimetable(0,classrooms['108'],182);
+    console.log(inspect(a,false,10))
 }
 
 test();
