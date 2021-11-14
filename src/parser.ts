@@ -26,9 +26,9 @@ export interface Day {
 }
 
 export interface Lesson {
-    name: string,
+    name?: string,
     teacher?: string,
-    room?: string,
+    room?: string | number,
     flags: LessonFlag[]
 }
 
@@ -204,6 +204,9 @@ export async function getTimetable(classId: number, classroomId: number, schoolI
 
     timetable.days = parseTable(timetableElement);
 
+    if (classroomId != 0 && !!classroomId)
+        timetable.days.forEach(day => day.lessons.forEach(slot => slot.forEach(lesson => lesson.room = classroomId)));
+
     return timetable;
 }
 
@@ -211,33 +214,10 @@ function ms(n: number) {
     return new Promise(r => setTimeout(r, n));
 }
 
-function delayStart<P extends Array<any>, R>(func: (...args: P) => Promise<R>, delay: number, ...args: P): Promise<R> {
+export function delayStart<P extends Array<any>, R>(func: (...args: P) => Promise<R>, delay: number, ...args: P): Promise<R> {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             func(...args).then(resolve).catch(reject);
         }, delay)
     })
 }
-
-async function test() {
-    const classes = await getClasses('30a1b45414856e5598f2d137a5965d5a4ad36826');
-    const classrooms = await getClassrooms('30a1b45414856e5598f2d137a5965d5a4ad36826');
-
-    // console.log({ classes, classrooms });
-
-    // let roomIds = [...Object.values(classes),...Object.values(classes),...Object.values(classes),...Object.values(classes)];
-
-    // let promises = [];
-    // let delay = 0;
-    // for (let x of roomIds) {
-    //     promises.push(delayStart(getTimetable, delay, x, 0, 182));
-    //     // delay += 1000;
-    // }
-
-
-    // console.log(await Promise.allSettled(promises));
-    const a = await getTimetable(0,classrooms['108'],182);
-    console.log(inspect(a,false,10))
-}
-
-test();

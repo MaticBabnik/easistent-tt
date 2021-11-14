@@ -4,8 +4,11 @@ import mercuriusCodegen, { gql } from 'mercurius-codegen'
 import { loadSchemaFiles } from 'mercurius-codegen/dist/schema'
 import { Cacheify } from './cache'
 import {getTimetable} from './parser'
+import School from './School'
 
 const app = Fastify()
+const ea = new School(182,'30a1b45414856e5598f2d137a5965d5a4ad36826');
+ea.setup();
 
 const buildContext = async (req: FastifyRequest, _reply: FastifyReply) => {
   return {
@@ -28,9 +31,10 @@ const resolvers: IResolvers = {
     hello(root, { name }, ctx, info) {
       return 'hello ' + name
     },
+    //@ts-ignore
     async timetable(root, {schoolId,classId,week},ctx, info) {
 
-      return await timetable(classId,schoolId,week);
+      return await timetable(classId,0,schoolId,week ?? 0);
     }
   }
 }
