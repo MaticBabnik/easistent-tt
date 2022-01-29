@@ -19,6 +19,7 @@ enum LessonFlag {
 type Lesson {
   name: String!
   teacher: String
+  className: String
   room: String
   flags: [LessonFlag]
 }
@@ -27,9 +28,9 @@ type Day {
   lessons: [[Lesson]]
 }
 
-type Timetable {
-  schoolId: Int!
-  classId: Int!
+type WeeklyTimetable {
+  className: String
+  room:String
   week: Int!
   scheduleDefinitions: [TimeSpan]
   days: [Day]

@@ -2,12 +2,10 @@ import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
 import mercurius, { IResolvers } from 'mercurius'
 import mercuriusCodegen, { gql } from 'mercurius-codegen'
 import { loadSchemaFiles } from 'mercurius-codegen/dist/schema'
-import { Cacheify } from './cache'
-import {getTimetable} from './parser'
 import School from './School'
 
 const app = Fastify()
-const ea = new School(182,'30a1b45414856e5598f2d137a5965d5a4ad36826');
+const ea = new School(182, '30a1b45414856e5598f2d137a5965d5a4ad36826');
 ea.setup();
 
 const buildContext = async (req: FastifyRequest, _reply: FastifyReply) => {
@@ -17,24 +15,19 @@ const buildContext = async (req: FastifyRequest, _reply: FastifyReply) => {
 }
 
 type PromiseType<T> = T extends PromiseLike<infer U> ? U : T
-
 declare module 'mercurius' {
   interface MercuriusContext extends PromiseType<ReturnType<typeof buildContext>> { }
 }
 
-const {schema} = loadSchemaFiles('./src/graphql/schema/*')
-const MINUTE = 60_000;
-const timetable = Cacheify(getTimetable,15*MINUTE,-1,true);
+const { schema } = loadSchemaFiles('./src/graphql/schema/*')
 
 const resolvers: IResolvers = {
   Query: {
-    hello(root, { name }, ctx, info) {
-      return 'hello ' + name
+    classTimetable(root, { className }, ctx, info) {
+      return ea.classTimetables.get(className);
     },
-    //@ts-ignore
-    async timetable(root, {schoolId,classId,week},ctx, info) {
-
-      return await timetable(classId,0,schoolId,week ?? 0);
+    classroomTimetable(root, { classroomName }, ctx, info) {
+      return ea.classroomTimetables.get(classroomName);
     }
   }
 }
@@ -44,7 +37,7 @@ app.register(mercurius, {
   resolvers,
   context: buildContext,
   graphiql: true,
-  ide:true,
+  ide: true,
 })
 
 mercuriusCodegen(app, {

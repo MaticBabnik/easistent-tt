@@ -1,5 +1,5 @@
 
 type Query {
-  hello(name: String!): String!
-  timetable(schoolId: Int!, classId: Int!, week: Int): Timetable!
+  classTimetable(className:String!): WeeklyTimetable
+  classroomTimetable(classroomName:String!): WeeklyTimetable
 }

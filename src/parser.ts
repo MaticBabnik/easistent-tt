@@ -1,7 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import { JSDOM } from 'jsdom'
-import settings from './settings.json'
-import { inspect } from 'util'
 
 const apiAddress = 'https://www.easistent.com/urniki/ajax_urnik';
 const headers = { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36' };
@@ -49,13 +47,11 @@ export enum Days {
 
 const DAY = 24 * 60 * 60 * 1_000;
 
-function dateToSchoolWeek(date: Date) {
+export function dateToSchoolWeek(date: Date) {
     if (!date) date = new Date();
     let schoolStart: Date;
-
-    if (date.getMonth() < 8) schoolStart = new Date(date.getFullYear() - 1, 9, 1); //september first of last year
-    else schoolStart = new Date(date.getFullYear(), 9, 0) //september first, current year
-
+    if (date.getMonth() < 8) schoolStart = new Date(date.getFullYear() - 1, 8, 1); //september first of last year
+    else schoolStart = new Date(date.getFullYear(), 8, 1) //september first, current year
 
     // In javascript the week starts on Sunday
     // This switch sets the date to the first sunday before school. (day 0 of week 1)
@@ -72,7 +68,6 @@ function dateToSchoolWeek(date: Date) {
 
 
     const daysSinceSchoolStart = Math.floor((date.getTime() - schoolStart.getTime()) / DAY);
-
     return Math.floor(daysSinceSchoolStart / 7) + 1;
 }
 
@@ -168,7 +163,6 @@ export async function getClassrooms(schoolPublicTimetableID: string) {
 export async function getTimetable(classId: number, classroomId: number, schoolId: number, week?: number): Promise<Timetable> {
     if (typeof week !== 'number')
         week = dateToSchoolWeek(new Date());
-
     const formData: any = {
         "id_sola": schoolId,
         "id_razred": classId,
