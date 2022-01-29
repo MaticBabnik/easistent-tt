@@ -97,7 +97,7 @@ export default class School {
                             name: lesson.name ?? "?",
                             teacher: lesson.teacher ?? "?",
                             flags: lesson.flags,
-                            room: lesson.room
+                            room: (lesson.room as string) ?? "?"
                         }))
                     )
             }));
