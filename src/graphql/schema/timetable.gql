@@ -31,6 +31,7 @@ type Day {
 type WeeklyTimetable {
   className: String
   room:String
+  teacher:String
   week: Int!
   scheduleDefinitions: [TimeSpan]
   days: [Day]

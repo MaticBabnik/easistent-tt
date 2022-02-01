@@ -183,7 +183,7 @@ export async function getTimetable(classId: number, classroomId: number, schoolI
         const body = new URLSearchParams(formData);
         response = await axios.post(apiAddress, body, requestOptions);
     } catch (e) {
-        console.error(`Fuckup in ${schoolId}-${classId}`);
+        console.error(`Error in ${schoolId}-${classId}/${classroomId}`);
         throw e;
     }
     const timetableElement: HTMLTableElement | null = new JSDOM(response?.data).window.document.querySelector('table.ednevnik-seznam_ur_teden');

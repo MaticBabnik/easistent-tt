@@ -1,16 +1,21 @@
 import { delayStart, getClasses, getClassrooms, getTimetable, LessonFlag, TimeSpan, Timetable, } from './parser'
 
-interface baseLesson {
+interface BaseLesson {
     name: string,
-    teacher: string,
     flags: LessonFlag[]
 }
 
-interface RoomLesson extends baseLesson {
-    className: string
+interface RoomLesson extends BaseLesson {
+    className: string,
+    teacher: string,
 }
-interface ClassLesson extends baseLesson {
-    room: string
+interface ClassLesson extends BaseLesson {
+    room: string,
+    teacher: string,
+}
+interface TeacherLesson extends BaseLesson {
+    room: string,
+    className: string
 }
 
 interface Day<T> {
@@ -30,13 +35,23 @@ interface RoomWeeklyTimetable {
     days: Day<RoomLesson>[]
 }
 
+interface TeacherWeeklyTimetable {
+    teacher: string,
+    week: number,
+    scheduleDefinitions: TimeSpan[],
+    days: Day<TeacherLesson>[]
+}
+
 export default class School {
     public readonly id: number;
     public readonly publicUrlId: string;
 
-    private classrooms: { [index: string]: number };
     private classes: { [index: string]: number };
+    private teachers: string[];
+    private classrooms: { [index: string]: number };
+
     public classTimetables: Map<string, ClassWeeklyTimetable>;
+    public teacherTimetables: Map<string, TeacherWeeklyTimetable>;
     public classroomTimetables: Map<string, RoomWeeklyTimetable>;
 
     private classNameFromId(id: number) {
@@ -62,9 +77,11 @@ export default class School {
 
         this.classes = {};
         this.classrooms = {};
+        this.teachers = [];
 
         this.classTimetables = new Map<string, ClassWeeklyTimetable>();
         this.classroomTimetables = new Map<string, RoomWeeklyTimetable>();
+        this.teacherTimetables = new Map<string, TeacherWeeklyTimetable>();
     }
 
     public async setup() {
@@ -85,6 +102,7 @@ export default class School {
     }
 
     private parseToUsable(classtt: Timetable[], clasroomtt: Timetable[]) {
+        //parse the class timetables
         this.classTimetables = new Map(classtt.map(tt => {
             const { scheduleDefinitions, week } = tt
 
@@ -111,7 +129,7 @@ export default class School {
 
             return [className, ctt];
         }));
-
+        //parse the classroom timetables
         this.classroomTimetables = new Map(clasroomtt.map(tt => {
             const { scheduleDefinitions, week } = tt;
 
@@ -148,8 +166,41 @@ export default class School {
 
             return [room, rtt]
         }))
+        //find all teachers
+        //why the fuck does TS say string|undefined when i literally check for undefined?
+        this.teachers =
+            [...new Set(
+                classtt.flatMap(tt => tt.days.flatMap(day => day.lessons.flatMap(period => period.flatMap(lesson => lesson.teacher))))
+            )].filter(x => x !== undefined) as string[];
 
-        return;
+        const { week, scheduleDefinitions, days } = classtt[0];
+
+        this.teacherTimetables = new Map<string, TeacherWeeklyTimetable>();
+        this.teachers.forEach(teacher => { //construct the teacher timetables
+            this.teacherTimetables.set(teacher, {
+                teacher: teacher,
+                week,
+                scheduleDefinitions,
+                days: [...Array(days.length)].map(x => ({ lessons: [...Array(scheduleDefinitions.length)].map(x => Array()) }))
+            })
+        });
+        
+        this.classTimetables.forEach(classtt => { //fill in the teacher timetables
+            classtt.days.forEach((day, dayIndex) => {
+                day.lessons.forEach((period, periodIndex) => {
+                    period.forEach(lesson => {
+                        if (this.teachers.includes(lesson.teacher)) {
+                            const { name, room, flags } = lesson
+                            this.teacherTimetables
+                                .get(lesson.teacher)
+                                ?.days[dayIndex]?.lessons[periodIndex]
+                                ?.push({ name, flags, room, className: classtt.className });
+                        }
+                    })
+                });
+            });
+        });
+
     }
 
     private async scrapeAll() {
@@ -174,5 +225,14 @@ export default class School {
                 .map(resTt => resTt.value));
 
         this.parseToUsable(classtt, clasroomtt);
+    }
+    public getClassrooms() {
+        return [...Object.keys(this.classrooms)];
+    }
+    public getClasses() {
+        return [...Object.keys(this.classes)];
+    }
+    public getTeachers() {
+        return this.teachers;
     }
 }

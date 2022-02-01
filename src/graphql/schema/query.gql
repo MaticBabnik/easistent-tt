@@ -2,4 +2,9 @@
 type Query {
   classTimetable(className:String!): WeeklyTimetable
   classroomTimetable(classroomName:String!): WeeklyTimetable
+  teacherTimetable(teacherName:String!): WeeklyTimetable
+
+  classes: [String]
+  classrooms: [String]
+  teachers: [String]
 }

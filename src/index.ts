@@ -28,22 +28,33 @@ const resolvers: IResolvers = {
     },
     classroomTimetable(root, { classroomName }, ctx, info) {
       return ea.classroomTimetables.get(classroomName);
+    },
+    teacherTimetable(root, { teacherName }, ctx, info) {
+      return ea.teacherTimetables.get(teacherName);
+    },
+    teachers(root, args, ctx, info) {
+      return ea.getTeachers();
+    },
+    classes(root, args, ctx, info) {
+      return ea.getClasses();
+    },
+    classrooms(root, args, ctx, info) {
+      return ea.getClassrooms();
     }
   }
 }
-
 app.register(mercurius, {
-  schema,
-  resolvers,
-  context: buildContext,
-  graphiql: true,
-  ide: true,
-})
+    schema,
+    resolvers,
+    context: buildContext,
+    graphiql: true,
+    ide: true,
+  })
 
 mercuriusCodegen(app, {
-  // Commonly relative to your root package.json
-  targetPath: './src/graphql/generated.ts',
+    // Commonly relative to your root package.json
+    targetPath: './src/graphql/generated.ts',
 
-}).catch(console.error)
+  }).catch(console.error)
 
-app.listen(process.env.PORT ?? 8080).then(console.log);
+app.listen(process.env.PORT ?? 8080,).then(console.log);
