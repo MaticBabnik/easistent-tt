@@ -1,11 +1,10 @@
 # easistent-tt
 
-eAsistent public timetable scraper/graphql API. Will host a Vegova instance soon™. 
+eAsistent public timetable scraper/graphql API. Vegova instance: [GraphiQL](https://vegova.sync.si/graphiql) | (`https://vegova.sync.si/graphql`)
 
 ## Usage
 The basic scraper is contained in `parser.ts`
 ```ts
-
 //razred,ucilnica,sola, teden?
 // razred _ali_ ucilnica je lahko 0, teden ni nujen                  
 getTimetable(460305, 0, 182)
