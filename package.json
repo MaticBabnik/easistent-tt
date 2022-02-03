@@ -12,7 +12,6 @@
   "license": "MIT",
   "dependencies": {
     "@types/jsdom": "^16.2.13",
-    "@types/needle": "^2.5.2",
     "@types/node": "^16.7.10",
     "axios": "^0.24.0",
     "fastify": "^3.21.0",
