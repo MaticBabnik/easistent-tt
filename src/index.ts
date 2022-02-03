@@ -1,11 +1,14 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
 import mercurius, { IResolvers } from 'mercurius'
-import mercuriusCodegen, { gql } from 'mercurius-codegen'
+import mercuriusCodegen from 'mercurius-codegen'
 import { loadSchemaFiles } from 'mercurius-codegen/dist/schema'
 import School from './School'
 
 const app = Fastify()
-const ea = new School(182, '30a1b45414856e5598f2d137a5965d5a4ad36826');
+const ea = new School(
+  parseInt(process.env.SCHOOL_ID ?? ""),
+  process.env.SCHOOL_PUBLIC_KEY ?? "");
+
 ea.setup();
 
 const buildContext = async (req: FastifyRequest, _reply: FastifyReply) => {
@@ -44,17 +47,15 @@ const resolvers: IResolvers = {
   }
 }
 app.register(mercurius, {
-    schema,
-    resolvers,
-    context: buildContext,
-    graphiql: true,
-    ide: true,
-  })
+  schema,
+  resolvers,
+  context: buildContext,
+  graphiql: true,
+  ide: true,
+})
 
 mercuriusCodegen(app, {
-    // Commonly relative to your root package.json
-    targetPath: './src/graphql/generated.ts',
+  targetPath: './src/graphql/generated.ts',
+}).catch(console.error)
 
-  }).catch(console.error)
-
-app.listen(process.env.PORT ?? 8080,).then(console.log);
+app.listen(process.env.PORT ?? 8080, "0.0.0.0").then(console.log);
