@@ -20,6 +20,7 @@ export interface TimeSpan {
 }
 
 export interface Day {
+    date: string,
     lessons: Lesson[][]
 }
 
@@ -117,7 +118,7 @@ function parseTable(tableElement: HTMLTableElement): Day[] {
             arr.push(parseCell(table[j][i] as HTMLTableCellElement));
         }
 
-        rotatedTable.push({ lessons: arr });
+        rotatedTable.push({ date: '', lessons: arr });
     }
 
     return rotatedTable;
@@ -162,6 +163,10 @@ export async function getClassrooms(schoolPublicTimetableID: string) {
     return classroomMap;
 }
 
+function getDates(table: HTMLTableElement): string[] {
+    return [...table.querySelectorAll<HTMLDivElement>('table.ednevnik-seznam_ur_teden>tbody>tr:nth-child(1)>*:not(:nth-child(1))>div:nth-child(2)')].map(dateElement => dateElement.innerHTML);
+}
+
 export async function getTimetable(classId: number, classroomId: number, schoolId: number, week?: number): Promise<Timetable> {
     if (typeof week !== 'number')
         week = dateToSchoolWeek(new Date());
@@ -197,8 +202,9 @@ export async function getTimetable(classId: number, classroomId: number, schoolI
     const timerangeElements = [...timetableElement.querySelectorAll('.ednevnik-seznam_ur_teden-ura>div.text10.gray')] as HTMLDivElement[];
 
     timetable.scheduleDefinitions = timerangeElements.map(parseTimeRange);
-
+    const dates = getDates(timetableElement);
     timetable.days = parseTable(timetableElement);
+    dates.forEach((date, index) => timetable.days[index].date = date);
 
     if (classroomId != 0 && !!classroomId)
         timetable.days.forEach(day => day.lessons.forEach(slot => slot.forEach(lesson => lesson.room = classroomId)));
