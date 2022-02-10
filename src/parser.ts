@@ -71,22 +71,24 @@ export function dateToSchoolWeek(date: Date) {
     return Math.floor(daysSinceSchoolStart / 7) + 1;
 }
 
-const flagTranslator: { [index: string]: LessonFlag } = {
-    'dogodek': 'EVENT',
-    'nadomeščanje': 'REPLACEMENT',
-    'zaposlitev': 'SUBSTITUTE',
-    'izpiti': 'EXAM',
-    'odpadla ura': 'CANCELED',
-    'neopravljena ura': 'NOTDONE',
-    'polovična ura': 'HALFTIME',
-    'interesna dejavnost': 'CLUB',
-    'govorilne ure': 'OFFICEHOURS',
-    'videokonferenca': 'ONLINE',
-}
+const flagTranslator2ElectricBoogaloo: { [index: string]: LessonFlag } = {
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_nadomescanje.png': 'REPLACEMENT',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_zaposlitev.png': 'SUBSTITUTE',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_odpadlo.png': 'CANCELED',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_neopravljeno.png': 'NOTDONE',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_dogodek.png': 'EVENT',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_govorilne.png': 'OFFICEHOURS',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_polovicna_ura.png': 'HALFTIME',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_id.png': 'CLUB'
+};
 
+/**
+ * This won't pick up <span> based flags. Too bad!
+ */
 function parseFlags(lessonElement: HTMLDivElement): LessonFlag[] {
     const flagElements = [...lessonElement.querySelectorAll('td[align=right]>img')] as HTMLImageElement[];
-    return flagElements.map(x => flagTranslator[x.title?.toLowerCase()]).filter(x => !!x);
+
+    return flagElements.map(x => flagTranslator2ElectricBoogaloo[x.src.toLowerCase()]).filter(x => !!x);
 }
 
 function parseLesson(lessonElement: HTMLDivElement): Lesson {
