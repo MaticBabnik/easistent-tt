@@ -25,6 +25,7 @@ type Lesson {
 }
 
 type Day {
+  date:String
   lessons: [[Lesson]]
 }
 

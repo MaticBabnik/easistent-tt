@@ -20,6 +20,7 @@ export interface TimeSpan {
 }
 
 export interface Day {
+    date: string,
     lessons: Lesson[][]
 }
 
@@ -71,22 +72,24 @@ export function dateToSchoolWeek(date: Date) {
     return Math.floor(daysSinceSchoolStart / 7) + 1;
 }
 
-const flagTranslator: { [index: string]: LessonFlag } = {
-    'dogodek': 'EVENT',
-    'nadomeščanje': 'REPLACEMENT',
-    'zaposlitev': 'SUBSTITUTE',
-    'izpiti': 'EXAM',
-    'odpadla ura': 'CANCELED',
-    'neopravljena ura': 'NOTDONE',
-    'polovična ura': 'HALFTIME',
-    'interesna dejavnost': 'CLUB',
-    'govorilne ure': 'OFFICEHOURS',
-    'videokonferenca': 'ONLINE',
-}
+const flagTranslator2ElectricBoogaloo: { [index: string]: LessonFlag } = {
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_nadomescanje.png': 'REPLACEMENT',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_zaposlitev.png': 'SUBSTITUTE',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_odpadlo.png': 'CANCELED',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_neopravljeno.png': 'NOTDONE',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_dogodek.png': 'EVENT',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_govorilne.png': 'OFFICEHOURS',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_polovicna_ura.png': 'HALFTIME',
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_id.png': 'CLUB'
+};
 
+/**
+ * This won't pick up <span> based flags. Too bad!
+ */
 function parseFlags(lessonElement: HTMLDivElement): LessonFlag[] {
     const flagElements = [...lessonElement.querySelectorAll('td[align=right]>img')] as HTMLImageElement[];
-    return flagElements.map(x => flagTranslator[x.title?.toLowerCase()]).filter(x => !!x);
+
+    return flagElements.map(x => flagTranslator2ElectricBoogaloo[x.src.toLowerCase()]).filter(x => !!x);
 }
 
 function parseLesson(lessonElement: HTMLDivElement): Lesson {
@@ -115,7 +118,7 @@ function parseTable(tableElement: HTMLTableElement): Day[] {
             arr.push(parseCell(table[j][i] as HTMLTableCellElement));
         }
 
-        rotatedTable.push({ lessons: arr });
+        rotatedTable.push({ date: '', lessons: arr });
     }
 
     return rotatedTable;
@@ -160,6 +163,10 @@ export async function getClassrooms(schoolPublicTimetableID: string) {
     return classroomMap;
 }
 
+function getDates(table: HTMLTableElement): string[] {
+    return [...table.querySelectorAll<HTMLDivElement>('table.ednevnik-seznam_ur_teden>tbody>tr:nth-child(1)>*:not(:nth-child(1))>div:nth-child(2)')].map(dateElement => dateElement.innerHTML);
+}
+
 export async function getTimetable(classId: number, classroomId: number, schoolId: number, week?: number): Promise<Timetable> {
     if (typeof week !== 'number')
         week = dateToSchoolWeek(new Date());
@@ -195,8 +202,9 @@ export async function getTimetable(classId: number, classroomId: number, schoolI
     const timerangeElements = [...timetableElement.querySelectorAll('.ednevnik-seznam_ur_teden-ura>div.text10.gray')] as HTMLDivElement[];
 
     timetable.scheduleDefinitions = timerangeElements.map(parseTimeRange);
-
+    const dates = getDates(timetableElement);
     timetable.days = parseTable(timetableElement);
+    dates.forEach((date, index) => timetable.days[index].date = date);
 
     if (classroomId != 0 && !!classroomId)
         timetable.days.forEach(day => day.lessons.forEach(slot => slot.forEach(lesson => lesson.room = classroomId)));
