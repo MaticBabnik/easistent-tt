@@ -7,4 +7,5 @@ type Query {
   classes: [String]
   classrooms: [String]
   teachers: [String]
+  timezone: String
 }

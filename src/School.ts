@@ -19,6 +19,7 @@ interface TeacherLesson extends BaseLesson {
 }
 
 interface Day<T> {
+    date: string,
     lessons: T[][]
 }
 interface ClassWeeklyTimetable {
@@ -109,6 +110,7 @@ export default class School {
             const className = this.classNameFromId(tt.classId ?? -1)
 
             const days: Day<ClassLesson>[] = tt.days.map(day => ({
+                date: day.date,
                 lessons:
                     day.lessons.map(period =>
                         period.map(lesson => ({
@@ -136,6 +138,7 @@ export default class School {
             const room = this.roomNameFromId(tt.classroomId ?? -1);
 
             const days: Day<RoomLesson>[] = tt.days.map((day, dayIndex) => ({
+                date: day.date,
                 lessons:
                     day.lessons.map((period, periodIndex) =>
                         period.map(lesson => {
@@ -181,10 +184,10 @@ export default class School {
                 teacher: teacher,
                 week,
                 scheduleDefinitions,
-                days: [...Array(days.length)].map(x => ({ lessons: [...Array(scheduleDefinitions.length)].map(x => Array()) }))
+                days: [...Array(days.length)].map((d, di) => ({ date: [...this.classTimetables.values()][0].days[di].date, lessons: [...Array(scheduleDefinitions.length)].map(x => Array()) }))
             })
         });
-        
+
         this.classTimetables.forEach(classtt => { //fill in the teacher timetables
             classtt.days.forEach((day, dayIndex) => {
                 day.lessons.forEach((period, periodIndex) => {

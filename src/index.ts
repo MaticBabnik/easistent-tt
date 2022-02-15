@@ -40,21 +40,24 @@ const resolvers: IResolvers = {
     },
     classrooms(root, args, ctx, info) {
       return ea.getClassrooms();
+    },
+    timezone(root, args, ctx, info) {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
     }
   }
 }
 app.register(mercurius, {
-    schema,
-    resolvers,
-    context: buildContext,
-    graphiql: true,
-    ide: true,
-  })
+  schema,
+  resolvers,
+  context: buildContext,
+  graphiql: true,
+  ide: true,
+})
 
 mercuriusCodegen(app, {
-    // Commonly relative to your root package.json
-    targetPath: './src/graphql/generated.ts',
+  // Commonly relative to your root package.json
+  targetPath: './src/graphql/generated.ts',
 
-  }).catch(console.error)
+}).catch(console.error)
 
-app.listen(process.env.PORT ?? 8080,).then(console.log);
+app.listen(process.env.PORT ?? 8080, "0.0.0.0").then(console.log);

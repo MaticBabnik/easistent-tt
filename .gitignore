@@ -3,3 +3,6 @@ package-lock.json
 .vscode
 generated.ts
 mercurius-schema.json
+
+#the file I use for experimenting
+API_tests.ts 
