@@ -1,4 +1,9 @@
 # easistent-tt
+### march-fix branch
+
+eAsistent now blocks foreign traffic. Since I can't get decent hosting in Slovenia I've decided to split the server into two parts
+- The master instance just waits for the 'worker' instance to send it data. It then serves that data (basically acting as cache).
+- The worker instance(s) actually scrape the timetables.
 
 eAsistent public timetable scraper/graphql API. Vegova instance: [GraphiQL](https://vegova.sync.si/graphiql) | (`https://vegova.sync.si/graphql`)
 

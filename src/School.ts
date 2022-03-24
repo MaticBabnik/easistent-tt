@@ -1,4 +1,6 @@
 import { delayStart, getClasses, getClassrooms, getTimetable, LessonFlag, TimeSpan, Timetable, } from './parser'
+import { EventEmitter } from "events"
+
 
 interface BaseLesson {
     name: string,
@@ -22,28 +24,43 @@ interface Day<T> {
     date: string,
     lessons: T[][]
 }
-interface ClassWeeklyTimetable {
+export interface ClassWeeklyTimetable {
     className: string,
     week: number,
     scheduleDefinitions: TimeSpan[],
     days: Day<ClassLesson>[]
 }
 
-interface RoomWeeklyTimetable {
+export interface RoomWeeklyTimetable {
     room: string,
     week: number,
     scheduleDefinitions: TimeSpan[],
     days: Day<RoomLesson>[]
 }
 
-interface TeacherWeeklyTimetable {
+export interface TeacherWeeklyTimetable {
     teacher: string,
     week: number,
     scheduleDefinitions: TimeSpan[],
     days: Day<TeacherLesson>[]
 }
 
-export default class School {
+interface SchoolEvents {
+    "parsing-done": () => void
+}
+
+declare interface School {
+    on<U extends keyof SchoolEvents>(
+        event: U, listener: SchoolEvents[U]
+    ): this;
+
+    emit<U extends keyof SchoolEvents>(
+        event: U, ...args: Parameters<SchoolEvents[U]>
+    ): boolean;
+}
+
+
+class School extends EventEmitter {
     public readonly id: number;
     public readonly publicUrlId: string;
 
@@ -73,6 +90,8 @@ export default class School {
     }
 
     constructor(id: number, publicUrlId: string) {
+        super();
+
         this.id = id;
         this.publicUrlId = publicUrlId;
 
@@ -104,106 +123,112 @@ export default class School {
 
     private parseToUsable(classtt: Timetable[], clasroomtt: Timetable[]) {
         //parse the class timetables
-        this.classTimetables = new Map(classtt.map(tt => {
-            const { scheduleDefinitions, week } = tt
+        try {
 
-            const className = this.classNameFromId(tt.classId ?? -1)
+            this.classTimetables = new Map(classtt.map(tt => {
+                const { scheduleDefinitions, week } = tt
 
-            const days: Day<ClassLesson>[] = tt.days.map(day => ({
-                date: day.date,
-                lessons:
-                    day.lessons.map(period =>
-                        period.map(lesson => ({
-                            name: lesson.name ?? "?",
-                            teacher: lesson.teacher ?? "?",
-                            flags: lesson.flags,
-                            room: (lesson.room as string) ?? "?"
-                        }))
-                    )
+                const className = this.classNameFromId(tt.classId ?? -1)
+
+                const days: Day<ClassLesson>[] = tt.days.map(day => ({
+                    date: day.date,
+                    lessons:
+                        day.lessons.map(period =>
+                            period.map(lesson => ({
+                                name: lesson.name ?? "?",
+                                teacher: lesson.teacher ?? "?",
+                                flags: lesson.flags,
+                                room: (lesson.room as string) ?? "?"
+                            }))
+                        )
+                }));
+
+                const ctt: ClassWeeklyTimetable = {
+                    className,
+                    scheduleDefinitions,
+                    week,
+                    days
+                };
+
+                return [className, ctt];
             }));
+            //parse the classroom timetables
+            this.classroomTimetables = new Map(clasroomtt.map(tt => {
+                const { scheduleDefinitions, week } = tt;
 
-            const ctt: ClassWeeklyTimetable = {
-                className,
-                scheduleDefinitions,
-                week,
-                days
-            };
+                const room = this.roomNameFromId(tt.classroomId ?? -1);
 
-            return [className, ctt];
-        }));
-        //parse the classroom timetables
-        this.classroomTimetables = new Map(clasroomtt.map(tt => {
-            const { scheduleDefinitions, week } = tt;
+                const days: Day<RoomLesson>[] = tt.days.map((day, dayIndex) => ({
+                    date: day.date,
+                    lessons:
+                        day.lessons.map((period, periodIndex) =>
+                            period.map(lesson => {
+                                //find the lesson in the classTimetable map
 
-            const room = this.roomNameFromId(tt.classroomId ?? -1);
+                                const fullLessonObj = this.classTimetables
+                                    .get(lesson.name ?? "")
+                                    ?.days?.[dayIndex]
+                                    ?.lessons?.[periodIndex]
+                                    .find(x => x.teacher === lesson.teacher);
 
-            const days: Day<RoomLesson>[] = tt.days.map((day, dayIndex) => ({
-                date: day.date,
-                lessons:
-                    day.lessons.map((period, periodIndex) =>
-                        period.map(lesson => {
-                            //find the lesson in the classTimetable map
+                                return {
+                                    name: fullLessonObj?.name ?? "UNKNOWN",
+                                    teacher: lesson.teacher ?? "?", // teacher is in the same field
+                                    flags: lesson.flags, //flags are the same for both rooms and classes
+                                    className: lesson.name ?? "???" //the name is actually the title element
+                                };
+                            })
+                        )
+                }));
 
-                            const fullLessonObj = this.classTimetables
-                                .get(lesson.name ?? "")
-                                ?.days?.[dayIndex]
-                                ?.lessons?.[periodIndex]
-                                .find(x => x.teacher === lesson.teacher);
+                const rtt: RoomWeeklyTimetable = {
+                    room,
+                    scheduleDefinitions,
+                    week,
+                    days
+                }
 
-                            return {
-                                name: fullLessonObj?.name ?? "UNKNOWN",
-                                teacher: lesson.teacher ?? "?", // teacher is in the same field
-                                flags: lesson.flags, //flags are the same for both rooms and classes
-                                className: lesson.name ?? "???" //the name is actually the title element
-                            };
+                return [room, rtt]
+            }))
+            //find all teachers
+            //why the fuck does TS say string|undefined when i literally check for undefined?
+            this.teachers =
+                [...new Set(
+                    classtt.flatMap(tt => tt.days.flatMap(day => day.lessons.flatMap(period => period.flatMap(lesson => lesson.teacher))))
+                )].filter(x => x !== undefined) as string[];
+
+            const { week, scheduleDefinitions, days } = classtt[0];
+
+            this.teacherTimetables = new Map<string, TeacherWeeklyTimetable>();
+            this.teachers.forEach(teacher => { //construct the teacher timetables
+                this.teacherTimetables.set(teacher, {
+                    teacher: teacher,
+                    week,
+                    scheduleDefinitions,
+                    days: [...Array(days.length)].map((d, di) => ({ date: [...this.classTimetables.values()][0].days[di].date, lessons: [...Array(scheduleDefinitions.length)].map(x => Array()) }))
+                })
+            });
+
+            this.classTimetables.forEach(classtt => { //fill in the teacher timetables
+                classtt.days.forEach((day, dayIndex) => {
+                    day.lessons.forEach((period, periodIndex) => {
+                        period.forEach(lesson => {
+                            if (this.teachers.includes(lesson.teacher)) {
+                                const { name, room, flags } = lesson
+                                this.teacherTimetables
+                                    .get(lesson.teacher)
+                                    ?.days[dayIndex]?.lessons[periodIndex]
+                                    ?.push({ name, flags, room, className: classtt.className });
+                            }
                         })
-                    )
-            }));
-
-            const rtt: RoomWeeklyTimetable = {
-                room,
-                scheduleDefinitions,
-                week,
-                days
-            }
-
-            return [room, rtt]
-        }))
-        //find all teachers
-        //why the fuck does TS say string|undefined when i literally check for undefined?
-        this.teachers =
-            [...new Set(
-                classtt.flatMap(tt => tt.days.flatMap(day => day.lessons.flatMap(period => period.flatMap(lesson => lesson.teacher))))
-            )].filter(x => x !== undefined) as string[];
-
-        const { week, scheduleDefinitions, days } = classtt[0];
-
-        this.teacherTimetables = new Map<string, TeacherWeeklyTimetable>();
-        this.teachers.forEach(teacher => { //construct the teacher timetables
-            this.teacherTimetables.set(teacher, {
-                teacher: teacher,
-                week,
-                scheduleDefinitions,
-                days: [...Array(days.length)].map((d, di) => ({ date: [...this.classTimetables.values()][0].days[di].date, lessons: [...Array(scheduleDefinitions.length)].map(x => Array()) }))
-            })
-        });
-
-        this.classTimetables.forEach(classtt => { //fill in the teacher timetables
-            classtt.days.forEach((day, dayIndex) => {
-                day.lessons.forEach((period, periodIndex) => {
-                    period.forEach(lesson => {
-                        if (this.teachers.includes(lesson.teacher)) {
-                            const { name, room, flags } = lesson
-                            this.teacherTimetables
-                                .get(lesson.teacher)
-                                ?.days[dayIndex]?.lessons[periodIndex]
-                                ?.push({ name, flags, room, className: classtt.className });
-                        }
-                    })
+                    });
                 });
             });
-        });
-
+            this.emit("parsing-done");
+        }
+        catch (e) {
+            console.error(e);
+        }
     }
 
     private async scrapeAll() {
@@ -229,6 +254,7 @@ export default class School {
 
         this.parseToUsable(classtt, clasroomtt);
     }
+
     public getClassrooms() {
         return [...Object.keys(this.classrooms)];
     }
@@ -238,4 +264,17 @@ export default class School {
     public getTeachers() {
         return this.teachers;
     }
+
+    public getData() {
+        return {
+            classrooms: [...Object.keys(this.classrooms)],
+            classes: [...Object.keys(this.classes)],
+            teachers: this.teachers,
+            classTimetables: Object.fromEntries(this.classTimetables),
+            classroomTimetables: Object.fromEntries(this.classroomTimetables),
+            teacherTimetables: Object.fromEntries(this.teacherTimetables),
+        }
+    }
 }
+
+export default School;
