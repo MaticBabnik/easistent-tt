@@ -1,0 +1,13 @@
+{
+    "school": {
+        "name": "Vegova",
+        "id": 182,
+        "key": "30a1b45414856e5598f2d137a5965d5a4ad36826"
+    },
+    "cache": {
+        "TTL": 900,
+        "nearTTL": 600,
+        "nearRange": 1
+    },
+    "port":3456
+}

@@ -31,9 +31,18 @@ export interface Lesson {
     flags: LessonFlag[]
 }
 
-//the 'multiple groups/vec skupin' flag is useless
-//TODO: some flags have crappy names (notdone = neopravljena ura, club = interesna dejavnost, officehours = govorilne ure)
-export type LessonFlag = "SUBSTITUTE" | "REPLACEMENT" | "CANCELED" | "NOTDONE" | "EVENT" | "OFFICEHOURS" | "HALFTIME" | "CLUB" | "ONLINE" | "EXAM"
+export enum LessonFlag {
+    SUBSTITUTE = "SUBSTITUTE",
+    REPLACEMENT = "REPLACEMENT",
+    CANCELED = "CANCELED",
+    NOTDONE = "NOTDONE",
+    EVENT = "EVENT",
+    OFFICEHOURS = "OFFICEHOURS",
+    HALFTIME = "HALFTIME",
+    CLUB = "CLUB",
+    ONLINE = "ONLINE",
+    EXAM = "EXAM"
+}
 
 
 export enum Days {
@@ -73,14 +82,14 @@ export function dateToSchoolWeek(date: Date) {
 }
 
 const flagTranslator2ElectricBoogaloo: { [index: string]: LessonFlag } = {
-    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_nadomescanje.png': 'REPLACEMENT',
-    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_zaposlitev.png': 'SUBSTITUTE',
-    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_odpadlo.png': 'CANCELED',
-    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_neopravljeno.png': 'NOTDONE',
-    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_dogodek.png': 'EVENT',
-    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_govorilne.png': 'OFFICEHOURS',
-    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_polovicna_ura.png': 'HALFTIME',
-    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_id.png': 'CLUB'
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_nadomescanje.png': LessonFlag.REPLACEMENT,
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_zaposlitev.png': LessonFlag.SUBSTITUTE,
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_odpadlo.png': LessonFlag.CANCELED,
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_neopravljeno.png': LessonFlag.NOTDONE,
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_dogodek.png': LessonFlag.EVENT,
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_govorilne.png': LessonFlag.OFFICEHOURS,
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_polovicna_ura.png': LessonFlag.HALFTIME,
+    'https://www.easistent.com/images/icons/ednevnik_seznam_ur_id.png': LessonFlag.CLUB
 };
 
 /**
@@ -130,11 +139,9 @@ function parseTimeRange(timeRangeElement: HTMLDivElement) {
     return { from, to };
 }
 
-//30a1b45414856e5598f2d137a5965d5a4ad36826
-export async function getClasses(schoolPublicTimetableID: string, fullUrl?: boolean) {
-    const url = fullUrl ? schoolPublicTimetableID : `https://www.easistent.com/urniki/${schoolPublicTimetableID}`; //TODO: full url is kinda useless
-
-    const response = await axios.get(`https://urnik.vegova.si/`, requestOptions);
+export async function getClasses(schoolPublicTimetableID: string) {
+    const url = `https://www.easistent.com/urniki/${schoolPublicTimetableID}`;
+    const response = await axios.get(url, requestOptions);
 
     const doc = (new JSDOM(response.data)).window.document;
     const classElements = doc.querySelectorAll('select#id_parameter>option') as NodeListOf<HTMLOptionElement>;
@@ -147,6 +154,7 @@ export async function getClasses(schoolPublicTimetableID: string, fullUrl?: bool
 
     return classMap;
 }
+
 export async function getClassrooms(schoolPublicTimetableID: string) {
     const url = `https://www.easistent.com/urniki/${schoolPublicTimetableID}/ucilnice`;
 
