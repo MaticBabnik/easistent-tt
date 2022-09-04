@@ -4,7 +4,7 @@
   "version": "3.0.0-dev",
   "scripts": {
     "build": "tsc",
-    "start": "node build/index.js",
+    "start": "node build/src/index.js",
     "watch": "tsc-watch --onSuccess \"node build/src/index.js\""
   },
   "author": "Matic Babnbik",
