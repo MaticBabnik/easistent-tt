@@ -17,12 +17,13 @@ export class SchoolService {
         this.school = new School(conf.school.id, conf.school.key);
         this.school.setup().then(() => {
             this.refreshNear();
-            setInterval(() => this.refreshNear.bind(this), conf.cache.nearTTL * 1000);
-            setInterval(() => this.clearOutdated.bind(this), conf.cache.TTL * 1000);
+            setInterval(this.refreshNear.bind(this), conf.cache.nearTTL * 1000);
+            setInterval(this.clearOutdated.bind(this), conf.cache.TTL * 1000);
         });
     }
 
     protected clearOutdated() {
+        console.log("Clearing outdated cache");
         [...this.weeks.entries()].forEach(async ([week, promise]) => {
             const w = await promise;
             if (w.rebuildTime < Date.now() - this.conf.cache.TTL * 1000) {
@@ -32,6 +33,7 @@ export class SchoolService {
     }
 
     protected async refreshNear() {
+        console.log(`Refreshing current week(s)`);
         const cw = this.currentWeek;
 
         for (let i = 0; i <= this.conf.cache.nearRange; i++) {

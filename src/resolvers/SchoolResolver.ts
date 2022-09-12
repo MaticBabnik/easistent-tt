@@ -47,7 +47,6 @@ export class SchoolResolver {
         const classWeek = schoolWeek.classTimetables.get(name);
         if (!classWeek)
             throw new Error('Class not found');
-        console.log(classWeek);
         return classWeek;
     }
 
