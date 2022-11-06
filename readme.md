@@ -3,13 +3,13 @@
 eAsistent public timetable scraper/graphql API. Vegova instance: [GraphiQL](https://vegova.sync.si/graphiql) | (`https://vegova.sync.si/graphql`)
 
 ## Usage
-The basic scraper is contained in `parser.ts`
+The basic scraper is contained in `parser.ts`.
 ```ts
 //razred,ucilnica,sola, teden?
 // razred _ali_ ucilnica je lahko 0, teden ni nujen                  
 getTimetable(460305, 0, 182)
 ```
-The `School` class automatically scrapes and caches the data
+The `School` class automatically scrapes and caches the data.
 ```ts
 const vegova = new School(182, '30a1b45414856e5598f2d137a5965d5a4ad36826');
 vegova.setup();
@@ -32,3 +32,4 @@ look at the schema in "src/graphql"
 ### TODO
 - expose the week option (will complicate cacheing and teacher timetables (minimum 36 requests / week))
 - cleanup the code
+- pay employees
