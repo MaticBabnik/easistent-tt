@@ -178,4 +178,10 @@ export class SchoolWeek {
 
         return this;
     }
+
+    public getTeacherTimteableBySlug(slug:string) {
+        const teacher = this.school.teachers[slug];
+        if (!teacher) throw "Invalid teacher";
+        return this.teacherTimetables.get(teacher);
+    }
 }

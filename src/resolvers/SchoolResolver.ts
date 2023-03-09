@@ -32,9 +32,9 @@ export class SchoolResolver {
         @Args() week: WeekArgs
     ) {
         const schoolWeek = await this.school.getWeek(week.week);
-        const teacherWeek = schoolWeek.teacherTimetables.get(slug);
+        const teacherWeek = schoolWeek.getTeacherTimteableBySlug(slug);
         if (!teacherWeek)
-            throw new Error('Teacher not found');
+            throw new Error('Teacher not found (or has no lessons this week)');
         return teacherWeek;
     }
 

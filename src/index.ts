@@ -42,7 +42,7 @@ async function main() {
         schema,
         csrfPrevention: true,
         cache: 'bounded',
-        plugins : [...envPlugins],
+        plugins: [...envPlugins],
         introspection: true
     });
 
@@ -53,3 +53,4 @@ async function main() {
 
 
 main();
+
