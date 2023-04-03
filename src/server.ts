@@ -1,28 +1,29 @@
 import { Config } from "./config";
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
-import mercurius, { IResolvers } from 'mercurius'
-import mercuriusCodegen from 'mercurius-codegen'
-import { loadSchemaFiles } from 'mercurius-codegen/dist/schema'
-import * as School from './School'
+import Fastify, { FastifyRequest, FastifyReply } from "fastify";
+import mercurius, { IResolvers } from "mercurius";
+import mercuriusCodegen from "mercurius-codegen";
+import { loadSchemaFiles } from "mercurius-codegen/dist/schema";
+import * as School from "./School";
 
 const buildContext = async (req: FastifyRequest, _reply: FastifyReply) => {
     return {
-        authorization: req.headers.authorization
-    }
-}
+        authorization: req.headers.authorization,
+    };
+};
 
-type PromiseType<T> = T extends PromiseLike<infer U> ? U : T
-declare module 'mercurius' {
-    interface MercuriusContext extends PromiseType<ReturnType<typeof buildContext>> { }
+type PromiseType<T> = T extends PromiseLike<infer U> ? U : T;
+declare module "mercurius" {
+    interface MercuriusContext
+        extends PromiseType<ReturnType<typeof buildContext>> {}
 }
 
 interface Data {
-    classes: string[],
-    classrooms: string[],
-    teachers: string[],
-    classTimetables: { [index: string]: School.ClassWeeklyTimetable },
-    classroomTimetables: { [index: string]: School.RoomWeeklyTimetable },
-    teacherTimetables: { [index: string]: School.TeacherWeeklyTimetable },
+    classes: string[];
+    classrooms: string[];
+    teachers: string[];
+    classTimetables: { [index: string]: School.ClassWeeklyTimetable };
+    classroomTimetables: { [index: string]: School.RoomWeeklyTimetable };
+    teacherTimetables: { [index: string]: School.TeacherWeeklyTimetable };
 }
 
 const cache: Data = {
@@ -31,14 +32,14 @@ const cache: Data = {
     teachers: [],
     classTimetables: {},
     classroomTimetables: {},
-    teacherTimetables: {}
+    teacherTimetables: {},
 };
 
 export default function main(cfg: Config) {
     console.log(`Starting server`);
-    const app = Fastify()
+    const app = Fastify();
 
-    const { schema } = loadSchemaFiles('./src/graphql/schema/*')
+    const { schema } = loadSchemaFiles("./src/graphql/schema/*");
 
     const resolvers: IResolvers = {
         Query: {
@@ -62,24 +63,29 @@ export default function main(cfg: Config) {
             },
             timezone(root, args, ctx, info) {
                 return Intl.DateTimeFormat().resolvedOptions().timeZone;
-            }
+            },
         },
         Mutation: {
             sendData(root, { data, secret }, ctx, info) {
-                if (secret !== cfg.secret)
-                    return false;
+                if (secret !== cfg.secret) return false;
 
                 const parsedData = JSON.parse(data ?? "{}");
-                if (!parsedData.classes || !parsedData.classrooms || !parsedData.teachers ||
+                if (
+                    !parsedData.classes ||
+                    !parsedData.classrooms ||
+                    !parsedData.teachers ||
                     parsedData.classes.length === 0 ||
                     parsedData.classrooms.length === 0 ||
-                    parsedData.teachers.length === 0) {
+                    parsedData.teachers.length === 0
+                ) {
                     return false;
                 }
 
-                if (typeof parsedData.classTimetables !== 'object' ||
-                    typeof parsedData.classroomTimetables !== 'object' ||
-                    typeof parsedData.teacherTimetables !== 'object') {
+                if (
+                    typeof parsedData.classTimetables !== "object" ||
+                    typeof parsedData.classroomTimetables !== "object" ||
+                    typeof parsedData.teacherTimetables !== "object"
+                ) {
                     return false;
                 }
 
@@ -91,20 +97,20 @@ export default function main(cfg: Config) {
                 cache.classroomTimetables = parsedData.classroomTimetables;
                 cache.teacherTimetables = parsedData.teacherTimetables;
                 return true;
-            }
-        }
+            },
+        },
     };
     app.register(mercurius, {
-            schema,
-            resolvers,
-            context: buildContext,
-            graphiql: true,
-            ide: true,
-        })
+        schema,
+        resolvers,
+        context: buildContext,
+        graphiql: true,
+        ide: true,
+    });
 
     mercuriusCodegen(app, {
-            targetPath: './src/graphql/generated.ts'
-    }).catch(console.error)
+        targetPath: "./src/graphql/generated.ts",
+    }).catch(console.error);
 
     app.listen(process.env.PORT ?? 8080, "0.0.0.0").then(console.log);
-    }
+}

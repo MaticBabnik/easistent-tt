@@ -1,14 +1,14 @@
-import {getConfig} from './config'
+import { getConfig } from "./config";
 import client from "./client";
 import server from "./server";
 
 const cfg = getConfig();
 
 switch (cfg.mode) {
-    case 'master':
+    case "master":
         server(cfg);
         break;
-    case 'worker':
+    case "worker":
         client(cfg);
         break;
 }

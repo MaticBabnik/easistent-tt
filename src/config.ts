@@ -1,11 +1,11 @@
 export interface Config {
-    schoolId?: number,
-    schoolPublicId?: string,
+    schoolId?: number;
+    schoolPublicId?: string;
 
-    mode?: "master" | "worker",
-    secret?: string,
-    masterUrl?: string,
-};
+    mode?: "master" | "worker";
+    secret?: string;
+    masterUrl?: string;
+}
 
 export function getConfig() {
     const cfg: Config = {};
@@ -16,16 +16,15 @@ export function getConfig() {
         throw "Invalid school info";
     }
 
-    const m = process.env.MODE?.toLowerCase() ?? '';
-    if (m === 'master') {
+    const m = process.env.MODE?.toLowerCase() ?? "";
+    if (m === "master") {
         cfg.mode = m;
         cfg.secret = process.env.SECRET;
 
         if (!cfg.secret) {
             throw "Invalid master info";
         }
-
-    } else if (m === 'worker') {
+    } else if (m === "worker") {
         cfg.mode = m;
         cfg.secret = process.env.SECRET;
         cfg.masterUrl = process.env.MASTER_URL;
