@@ -32,6 +32,8 @@ export type OutEvent = {
     teacherKey?: string;
     classroomKey?: string;
     groupName?: string;
+    dayIndex: number;
+    periodIndex: number;
 };
 
 export type WeekData = {
@@ -116,6 +118,9 @@ export class School {
         const events = weekEvents
             .map<OutEvent | undefined>((evt) => {
                 return {
+                    periodIndex: evt.periodIndex,
+                    dayIndex: evt.dayIndex,
+
                     classKey: evt.class,
                     title: {
                         long: evt.longTitle ?? evt.shortTitle,
