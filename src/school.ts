@@ -66,6 +66,12 @@ export class School {
 
     protected cache = new Map<number, CacheEntry<WeekData>>();
 
+    protected name = "";
+
+    public get Name() {
+        return this.name;
+    }
+
     public get Classes() {
         return [...this.classesByKey.values()];
     }
@@ -225,6 +231,10 @@ export class School {
             this.fetcher.getClassesPage(),
             this.fetcher.getRoomsPage(),
         ]);
+
+        this.name = this.parser.parseName(classes);
+
+        console.log(`School ${this.id}:${this.key} is "${this.name}"`);
 
         this.parser.parseOptions(classes).forEach((x) => {
             this.classesByKey.set(x.key, x);

@@ -88,6 +88,15 @@ export class Parser {
         );
     }
 
+    public parseName(html: string): string {
+        const { document } = parseHTML(html);
+        const schoolNameElement = document.querySelector(
+            "#okvir_prijava > h1 > span"
+        ) as unknown as HTMLSpanElement;
+
+        return schoolNameElement.innerText.trim();
+    }
+
     private static parseDates(mainTable: HTMLElement): Date[] {
         return [
             ...mainTable.querySelectorAll(
@@ -172,7 +181,7 @@ export class Parser {
 
         const mainTable = document.querySelector(
             "table.ednevnik-seznam_ur_teden"
-        ) as any as HTMLElement;
+        ) as unknown as HTMLElement;
 
         if (!mainTable) return "Could not find main table!";
 
