@@ -29,12 +29,12 @@ const weekHook = {
 export default new Elysia()
     .get(
         "/week",
-        ({ query: { week } }) => ({ week: s.getWeek(week) }),
+        async ({ query: { week } }) => ({ week: await s.getWeek(week) }),
         weekHook
     )
     .get(
         "/all",
-        async ({ query: { week }, set }) => ({
+        async ({ query: { week } }) => ({
             teachers: s.Teachers,
             rooms: s.Rooms,
             classes: s.Classes,
@@ -43,7 +43,7 @@ export default new Elysia()
         }),
         weekHook
     )
-    .get("/errors", ({ set }) => ({ errors: s.errors }))
+    .get("/errors", () => ({ errors: s.errors }))
     .get("/teachers", () => ({ teachers: s.Teachers }))
     .get("/classes", () => ({ classes: s.Classes }))
     .get("/classrooms", () => ({ rooms: s.Rooms }))
