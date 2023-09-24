@@ -17,11 +17,12 @@ const weekHook = {
     transform({ query }: { query: any }) {
         if (query.week) query.week = +query.week;
     },
-    afterHandle: (ctx: any, response: any) => {
-        const when = response?.week?.scrapedAt;
+    afterHandle: ({ set }: any, response: any) => {
+        const when = response.week?.scrapedAt;
 
         if (when) {
-            ctx.set.headers["Age"] = ((Date.now() - when) / 1000) << 0;
+            // get relative age, convert to seconds, cast to int
+            set.headers["age"] = ((Date.now() - when) / 1000) << 0;
         }
     },
 };
