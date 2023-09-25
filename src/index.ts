@@ -1,6 +1,9 @@
 import { Elysia } from "elysia";
 import { setTimeZone } from "bun:jsc";
 import { swagger } from "@elysiajs/swagger";
+// this should be "with", but "assert" has better editor/TS support
+import { getBuildInfo } from "./util/buildInfo" assert { type: "macro" };
+import pkg from "../package.json" assert { type: "json" };
 
 import api from "./api";
 
@@ -29,6 +32,14 @@ new Elysia()
     .get("/", ({ set }) => {
         set.redirect = "/docs";
     })
+    .get("/dev", () => ({
+        buildInfo: getBuildInfo(),
+        runtime: {
+            bun: Bun.version,
+            os: process.platform,
+        },
+        apiVersion: pkg.version,
+    }))
     .listen({
         port: process.env.PORT ?? 3000,
     });

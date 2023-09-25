@@ -1,7 +1,7 @@
 // import { JSDOM } from "jsdom";
 import { HTMLElement, HTMLOptionElement, parseHTML } from "linkedom";
 import slugify from "slugify";
-import { easistentDateParse, timeToOffset } from "./time";
+import { easistentDateParse, timeToOffset } from "../util/time";
 import { EventFlag, getFlags } from "./eventFlags";
 
 export type Option = {

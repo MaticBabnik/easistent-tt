@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { School } from "./school";
+import { School } from "./easistent/school";
 
 const s = new School(process.env.SCHOOL_ID!, process.env.SCHOOL_KEY!);
 await s.init();
