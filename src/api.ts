@@ -38,6 +38,7 @@ export default new Elysia()
             rooms: s.Rooms,
             teachers: s.Teachers,
             week: await s.getWeek(week),
+            currentWeek: s.getWeekForDate(),
         }),
         {
             ...weekHook,
@@ -47,6 +48,7 @@ export default new Elysia()
             },
             response: t.Object({
                 week: at.WeekData,
+                currentWeek: t.Number(),
                 teachers: t.Array(at.TeacherOption),
                 classes: t.Array(at.Option),
                 rooms: t.Array(at.Option),
@@ -56,14 +58,17 @@ export default new Elysia()
     )
     .get(
         "/week",
-        async ({ query: { week } }) => ({ week: await s.getWeek(week) }),
+        async ({ query: { week } }) => ({
+            week: await s.getWeek(week),
+            currentWeek: s.getWeekForDate(),
+        }),
         {
             ...weekHook,
             detail: {
                 summary: "Get all information for a given (or current) week",
                 tags: ["Main"],
             },
-            response: t.Object({ week: at.WeekData }),
+            response: t.Object({ week: at.WeekData, currentWeek: t.Number() }),
         }
     )
     .get("/errors", () => ({ errors: s.errors }), {
