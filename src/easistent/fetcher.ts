@@ -11,8 +11,21 @@ export class Fetcher {
 
     constructor(protected id: string, protected key: string) {}
 
-    private checkStatus(r: Response) {
-        return r.status != 200;
+    private checkStatus(
+        r: Response,
+        context?: Record<string, string | number>
+    ) {
+        if (r.status == 200) return;
+
+        let c = context
+            ? Object.entries(context)
+                  .map(([k, v]) => `${k}:${v}`)
+                  .join(",")
+            : "";
+
+        throw new Error(
+            `Failed to fetch, got ${r.status} ${r.statusText} | ` + context
+        );
     }
 
     private async genericGet(url: string) {
@@ -54,20 +67,13 @@ export class Fetcher {
             qversion: "1",
         }).toString();
 
-        try {
-            response = await fetch(
-                "https://www.easistent.com/urniki/ajax_urnik",
-                {
-                    ...Fetcher.fetchOptions,
-                    method: "POST",
-                    body,
-                }
-            );
+        response = await fetch("https://www.easistent.com/urniki/ajax_urnik", {
+            ...Fetcher.fetchOptions,
+            method: "POST",
+            body,
+        });
 
-            if (!this.checkStatus) throw 1;
-        } catch {
-            throw new Error(`Fetch failed for ${options}`);
-        }
+        this.checkStatus(response, options);
 
         return await response.text();
     }
