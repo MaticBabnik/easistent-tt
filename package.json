@@ -2,7 +2,7 @@
     "name": "easistent-tt",
     "module": "src/index.ts",
     "type": "module",
-    "version": "4.0.1-dev",
+    "version": "4.1.0-wekapipo",
     "devDependencies": {
         "@types/jsdom": "^21.1.2",
         "bun-types": "latest",

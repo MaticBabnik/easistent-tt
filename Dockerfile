@@ -1,22 +1,20 @@
-FROM debian:10-slim AS build
+FROM oven/bun:debian AS build
 
 ARG NODE_ENV=production
 
-RUN apt-get update && apt-get install -y git unzip curl bash
-
-RUN curl -fsSL https://bun.sh/install | bash -s "bun-v1.0.0"
+RUN apt-get update && apt-get install -y git 
 
 WORKDIR /app
 
 COPY package.json .
 
-RUN ["/root/.bun/bin/bun", "i"]
+RUN ["bun", "i"]
 
 COPY . .
 
-RUN ["/root/.bun/bin/bun", "build", "--target=bun", "src/index.ts", "--outfile=index.js"]
+RUN ["bun", "build", "--target=bun", "src/index.ts", "--outfile=index.js"]
 
-FROM oven/bun:1.0
+FROM oven/bun:slim
 
 WORKDIR /app
 
