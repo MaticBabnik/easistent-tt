@@ -1,64 +1,73 @@
-import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
-import mercurius, { IResolvers } from 'mercurius'
-import mercuriusCodegen from 'mercurius-codegen'
-import { loadSchemaFiles } from 'mercurius-codegen/dist/schema'
-import School from './School'
+import { Elysia } from "elysia";
+import { setTimeZone } from "bun:jsc";
+import { swagger } from "@elysiajs/swagger";
+// this should be "with", but "assert" has better editor/TS support
+import { getBuildInfo } from "./util/buildInfo" assert { type: "macro" };
+import pkg from "../package.json" assert { type: "json" };
 
-const app = Fastify()
-const ea = new School(
-  parseInt(process.env.SCHOOL_ID ?? ""),
-  process.env.SCHOOL_PUBLIC_KEY ?? "");
+import api from "./api";
+import * as at from "./apiTypes";
 
-ea.setup();
+setTimeZone("Europe/Ljubljana"); // For now easistent is only available in Slovenia
 
-const buildContext = async (req: FastifyRequest, _reply: FastifyReply) => {
-  return {
-    authorization: req.headers.authorization
-  }
-}
+new Elysia()
+    .use(
+        swagger({
+            exclude: ["/", "/docs", "/docs/json"],
+            path: "/docs",
+            documentation: {
+                info: {
+                    title: "easistent-tt",
+                    version: pkg.version,
+                    contact: {
+                        name: "Matic Babnik",
+                        url: "https://babnik.io",
+                    },
+                    description: `
+A nice-ish API for easistent's public timetables.
 
-type PromiseType<T> = T extends PromiseLike<infer U> ? U : T
-declare module 'mercurius' {
-  interface MercuriusContext extends PromiseType<ReturnType<typeof buildContext>> { }
-}
-
-const { schema } = loadSchemaFiles('./src/graphql/schema/*')
-
-const resolvers: IResolvers = {
-  Query: {
-    classTimetable(root, { className }, ctx, info) {
-      return ea.classTimetables.get(className);
-    },
-    classroomTimetable(root, { classroomName }, ctx, info) {
-      return ea.classroomTimetables.get(classroomName);
-    },
-    teacherTimetable(root, { teacherName }, ctx, info) {
-      return ea.teacherTimetables.get(teacherName);
-    },
-    teachers(root, args, ctx, info) {
-      return ea.getTeachers();
-    },
-    classes(root, args, ctx, info) {
-      return ea.getClasses();
-    },
-    classrooms(root, args, ctx, info) {
-      return ea.getClassrooms();
-    },
-    timezone(root, args, ctx, info) {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone;
-    }
-  }
-}
-app.register(mercurius, {
-  schema,
-  resolvers,
-  context: buildContext,
-  graphiql: true,
-  ide: true,
-})
-
-mercuriusCodegen(app, {
-  targetPath: './src/graphql/generated.ts'
-}).catch(console.error)
-
-app.listen(process.env.PORT ?? 8080, "0.0.0.0").then(console.log);
+[Github repo](https://github.com/MaticBabnik/easistent-tt)
+`,
+                },
+                tags: [
+                    {
+                        name: "Main",
+                        description: "The most useful endpoints",
+                    },
+                    {
+                        name: "Components",
+                        description: "'/all' split up if thats your thing",
+                    },
+                    {
+                        name: "Developer",
+                        description: "For nerds",
+                    },
+                ],
+            },
+        })
+    )
+    .use(api)
+    .get("/", ({ set }) => {
+        set.redirect = "/docs";
+    })
+    .get(
+        "/dev",
+        () => ({
+            buildInfo: getBuildInfo(),
+            runtime: {
+                bun: Bun.version,
+                os: process.platform,
+            },
+            apiVersion: pkg.version,
+        }),
+        {
+            detail: {
+                summary: "Information about the deployment",
+                tags: ["Developer"],
+            },
+            response: at.Dev,
+        }
+    )
+    .listen({
+        port: process.env.PORT ?? 3000,
+    });

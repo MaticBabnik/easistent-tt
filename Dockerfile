@@ -1,17 +1,29 @@
-FROM node:17-alpine
+FROM oven/bun:debian AS build
 
-RUN ["mkdir", "/app"]
+ARG NODE_ENV=production
+
+RUN apt-get update && apt-get install -y git 
 
 WORKDIR /app
 
 COPY package.json .
 
-RUN ["npm", "i"] 
+RUN ["bun", "i"]
 
 COPY . .
 
-EXPOSE 8080
-ENV SCHOOL_ID=182
-ENV SCHOOL_PUBLIC_KEY="30a1b45414856e5598f2d137a5965d5a4ad36826"
+RUN ["bun", "build", "--target=bun", "src/index.ts", "--outfile=index.js"]
 
-CMD [ "npm", "run", "start" ]
+FROM oven/bun:slim
+
+WORKDIR /app
+
+COPY package.json .
+COPY --from=build /app/index.js .
+
+EXPOSE 3000
+ENV PORT=3000
+ENV SCHOOL_ID=182
+ENV SCHOOL_KEY="30a1b45414856e5598f2d137a5965d5a4ad36826"
+
+CMD [ "bun", "run", "/app/index.js" ]
