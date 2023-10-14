@@ -1,4 +1,3 @@
-// import { JSDOM } from "jsdom";
 import { HTMLElement, HTMLOptionElement, parseHTML } from "linkedom";
 import slugify from "slugify";
 import { easistentDateParse, timeToOffset } from "../util/time";
@@ -64,7 +63,7 @@ function childrenInRange(el: HTMLElement, start = 0, end = 0): HTMLElement[] {
     if (end >= max) throw new Error("end is out of bounds");
     if (end <= 0) end = max - 1 - end;
 
-    let arr = [];
+    const arr = [];
 
     for (let i = start; i <= end; i++) {
         arr.push(el.children[i]);
@@ -111,7 +110,7 @@ export class Parser {
                 ".ednevnik-seznam_ur_teden-ura > .gray"
             ),
         ].map((x) => {
-            let [start, end] = x.innerHTML.trim().split(" - ");
+            const [start, end] = x.innerHTML.trim().split(" - ");
 
             return {
                 startOffset: timeToOffset(start),
@@ -150,14 +149,14 @@ export class Parser {
 
         const flags = getFlags(flagElements);
         const shortTitle = titleElement?.innerText?.trim();
-        let longTitle = titleElement?.attributes?.title?.value?.trim();
+        const longTitle = titleElement?.attributes?.title?.value?.trim();
 
         const teacherAndClassroom =
             teacherAndRoomElement?.innerText?.split(", ");
 
         const teacherShort = teacherAndClassroom?.[0]?.trim();
         const classroom = teacherAndClassroom?.[1]?.trim();
-        let teacherLong =
+        const teacherLong =
             teacherAndRoomElement?.attributes?.title?.value?.trim();
 
         const group = groupElement?.innerText;

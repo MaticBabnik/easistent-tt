@@ -8,7 +8,9 @@ import {
     Period,
     TeacherOption,
 } from "./parser";
+import { NotFoundError } from "elysia";
 import { EventFlag } from "./eventFlags";
+import { type Event, generateCalendar } from "../util/ical";
 
 export type SchoolError = {
     where: string;
@@ -44,6 +46,14 @@ export type WeekData = {
     scrapedAt: number;
 };
 
+type IcalFilterData = {
+    teachers?: string;
+    rooms?: string;
+    classes?: string;
+};
+
+type SchoolEvent = IcalFilterData & Event;
+
 const DEFAULT_TTL = 30 * 60 * 1000;
 const SCRAPE_INTERVAL = DEFAULT_TTL - 30_000;
 
@@ -65,6 +75,7 @@ export class School {
     protected teachersByName = new Map<string, TeacherOption>();
 
     protected cache = new Map<number, CacheEntry<WeekData>>();
+    protected iCalCache = new Map<number, SchoolEvent[]>();
 
     protected name = "";
 
@@ -107,7 +118,7 @@ export class School {
         timetablesRequests
             .filter((x) => typeof x.result === "string")
             .forEach((fail) => {
-                let { display } = this.classesByKey.get(fail.key)!;
+                const { display } = this.classesByKey.get(fail.key)!;
                 this.classesByKey.delete(fail.key);
                 this.classesByName.delete(display);
 
@@ -133,11 +144,11 @@ export class School {
                         short: evt.shortTitle,
                     },
                     flags: evt.flags,
-                    classroomKey: !!evt.classroom
+                    classroomKey: evt.classroom
                         ? this.roomsByName.get(evt.classroom)?.key
                         : undefined,
                     groupName: evt.group,
-                    teacherKey: !!evt.teacherShort
+                    teacherKey: evt.teacherShort
                         ? this.teachersByName.get(evt.teacherShort)?.key
                         : undefined,
                 };
@@ -153,6 +164,60 @@ export class School {
             hourOffsets: successful[0].hourOffsets,
             scrapedAt,
         };
+    }
+
+    protected convertToIcalEvents(w: WeekData): SchoolEvent[] {
+        const iCalTimeSlots = w.dates.map((date) =>
+            w.hourOffsets.map(({ startOffset, endOffset }) => ({
+                startDate: new Date(date.valueOf() + startOffset),
+                endDate: new Date(date.valueOf() + endOffset),
+            }))
+        );
+        let i = 0;
+        return w.events.map((ev) => {
+            const teacher = ev.teacherKey
+                    ? this.teachersByKey.get(ev.teacherKey)
+                    : undefined,
+                room = ev.classroomKey
+                    ? this.roomsByKey.get(ev.classroomKey)
+                    : undefined,
+                sclass = ev.classKey
+                    ? this.classesByKey.get(ev.classKey)
+                    : undefined;
+
+            return {
+                // unique identifier
+                uid: `eatt-${this.id}-${w.week}-${ev.dayIndex}-${
+                    ev.periodIndex
+                }-${ev.title.short}-${i++}`,
+                // from - to
+                ...iCalTimeSlots[ev.dayIndex][ev.periodIndex],
+                title: ev.title.short,
+                status: ev.flags.includes(EventFlag.Canceled)
+                    ? "CANCELLED"
+                    : "CONFIRMED",
+                categories: [
+                    teacher?.fullName,
+                    sclass?.display,
+                    room?.display,
+                ].filter((x) => !!x) as string[],
+                attendees: teacher
+                    ? [
+                          {
+                              name: teacher?.fullName,
+                          },
+                      ]
+                    : undefined,
+                description: `${ev.title.long} [${ev.flags.join(", ")}]
+Group: ${ev.groupName ?? "/"}
+Teacher: ${teacher?.fullName ?? "?"}
+Room: ${room?.display ?? "?"}
+Class: ${sclass?.display ?? "?"}`,
+                teachers: ev.teacherKey,
+                classes: ev.classKey,
+                rooms: ev.classroomKey,
+            };
+        });
     }
 
     public async getWeek(n?: number): Promise<WeekData> {
@@ -171,6 +236,7 @@ export class School {
             ttl: DEFAULT_TTL,
             data,
         });
+        this.iCalCache.set(n, this.convertToIcalEvents(data));
 
         return data;
     }
@@ -180,7 +246,7 @@ export class School {
     }
 
     private mergeTeachers(from: ParsedEvent[]) {
-        for (let ev of from) {
+        for (const ev of from) {
             if (!ev.teacherShort) continue;
             if (this.teachersByName.has(ev.teacherShort)) continue;
 
@@ -220,9 +286,26 @@ export class School {
     public getWeekForDate(date = new Date()) {
         const now = date.valueOf();
         const then = this.schoolYearEpoch.valueOf();
-        let week = (now - then) / School.WEEK + School.FLOOR_OFFSET;
+        const week = (now - then) / School.WEEK + School.FLOOR_OFFSET;
 
         return Math.floor(week);
+    }
+
+    public ical(type: "teachers" | "rooms" | "classes", key: string) {
+        const repo = this[`${type}ByKey`];
+        const atkey = repo.get(key);
+
+        if (!atkey) throw new NotFoundError();
+
+        const cal = generateCalendar(
+            [...this.iCalCache.values()].flatMap((x) =>
+                x
+                    .filter((x) => x[type] == key)
+                    .map((x) => ({ ...x, calName: `${type}/${key}` }))
+            )
+        );
+
+        return cal;
     }
 
     public async init() {
@@ -266,7 +349,7 @@ export class School {
         timetablesRequests
             .filter((x) => typeof x.result === "string")
             .forEach((fail) => {
-                let { display } = this.classesByKey.get(fail.key)!;
+                const { display } = this.classesByKey.get(fail.key)!;
                 this.classesByKey.delete(fail.key);
                 this.classesByName.delete(display);
 
@@ -293,11 +376,11 @@ export class School {
         if (this.asRunning) return;
         this.asRunning = true;
 
-        let as = () => {
-            let week = this.getWeekForDate();
+        const as = () => {
+            const week = this.getWeekForDate();
 
-            let from = Math.max(1, week - 1);
-            let to = Math.min(52, week + 1);
+            const from = Math.max(1, week - 1);
+            const to = Math.min(52, week + 1);
 
             for (let i = from; i <= to; i++) {
                 this.getWeek(i);

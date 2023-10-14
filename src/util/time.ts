@@ -22,7 +22,7 @@ export function easistentDateParse(eaDate: string) {
 }
 
 export function timeToOffset(eaTime: string) {
-    let [hours, minutes] = eaTime.split(":").map((x) => parseInt(x));
+    const [hours, minutes] = eaTime.split(":").map((x) => parseInt(x));
 
     return (hours * 60 + minutes) * 60_000;
 }

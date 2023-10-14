@@ -49,7 +49,7 @@ export function getBuildInfo() {
     };
 
     if (hasGit()) {
-        let dhs = getCommitInfo();
+        const dhs = getCommitInfo();
         out.ref = dhs[0];
         out.commitHash = dhs[1];
         out.commitMessage = dhs[2];

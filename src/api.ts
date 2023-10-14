@@ -16,10 +16,25 @@ const weekHook = {
             })
         ),
     }),
-    transform({ query }: { query: any }) {
-        if (query.week) query.week = +query.week;
+    transform({ query }: { query: Record<PropertyKey, unknown> }) {
+        switch (typeof query.week) {
+            case "string": {
+                const int = parseInt(query.week);
+                if (!isNaN(int)) query.week = int;
+                else delete query.week;
+                break;
+            }
+            case "number":
+            case "undefined":
+                break;
+            default:
+                delete query.week;
+        }
     },
-    afterHandle: ({ set }: any, response: any) => {
+    afterHandle: (
+        { set }: { set: { headers: Record<PropertyKey, unknown> } },
+        response: { week?: { scrapedAt: number } }
+    ) => {
         const when = response.week?.scrapedAt;
 
         if (when) {
@@ -105,4 +120,24 @@ export default new Elysia()
             tags: ["Components"],
         },
         response: t.Object({ name: t.String() }),
-    });
+    })
+    .get(
+        "/ical/:type/:id",
+        ({ params: { type, id } }) => {
+            return s.ical(type as "teachers" | "classes" | "rooms", id);
+        },
+        {
+            detail: {
+                summary: "iCal",
+                tags: ["Other"],
+            },
+            params: t.Object({
+                type: t.Enum({
+                    teachers: "teachers",
+                    classes: "classes",
+                    rooms: "rooms",
+                }),
+                id: t.String(),
+            }),
+        }
+    );
