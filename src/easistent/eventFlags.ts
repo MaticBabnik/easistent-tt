@@ -13,9 +13,9 @@ export enum EventFlag {
 
 const flagMap = new Map(
     Object.entries({
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_nadomescanje.png":
-            EventFlag.Replacement,
         "https://www.easistent.com/images/icons/ednevnik_seznam_ur_zaposlitev.png":
+            EventFlag.Replacement,
+        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_nadomescanje.png":
             EventFlag.Substitute,
         "https://www.easistent.com/images/icons/ednevnik_seznam_ur_odpadlo.png":
             EventFlag.Canceled,

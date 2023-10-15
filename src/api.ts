@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { School } from "./easistent/school";
 import * as at from "./apiTypes";
+import { Lang } from "./util/lang";
 
 const s = new School(process.env.SCHOOL_ID!, process.env.SCHOOL_KEY!);
 await s.init();
@@ -123,8 +124,12 @@ export default new Elysia()
     })
     .get(
         "/ical/:type/:id",
-        ({ params: { type, id } }) => {
-            return s.ical(type as "teachers" | "classes" | "rooms", id);
+        ({ params: { type, id }, query: { lang } }) => {
+            return s.ical(
+                type as "teachers" | "classes" | "rooms",
+                id,
+                lang as Lang | undefined
+            );
         },
         {
             detail: {
@@ -138,6 +143,9 @@ export default new Elysia()
                     rooms: "rooms",
                 }),
                 id: t.String(),
+            }),
+            query: t.Object({
+                lang: t.Optional(t.Enum({ en: "en", si: "si" })),
             }),
         }
     );

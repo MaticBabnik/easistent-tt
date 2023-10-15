@@ -10,7 +10,8 @@ import {
 } from "./parser";
 import { NotFoundError } from "elysia";
 import { EventFlag } from "./eventFlags";
-import { type Event, generateCalendar } from "../util/ical";
+import { type Event as IcalEvent, generateCalendar } from "../util/ical";
+import { Lang, getDescription, getFlagString } from "../util/lang";
 
 export type SchoolError = {
     where: string;
@@ -46,13 +47,13 @@ export type WeekData = {
     scrapedAt: number;
 };
 
-type IcalFilterData = {
-    teachers?: string;
-    rooms?: string;
-    classes?: string;
-};
+// type IcalFilterData = {
+//     teachers?: string;
+//     rooms?: string;
+//     classes?: string;
+// };
 
-type SchoolEvent = IcalFilterData & Event;
+// type IcalEvent = IcalFilterData & Event;
 
 const DEFAULT_TTL = 30 * 60 * 1000;
 const SCRAPE_INTERVAL = DEFAULT_TTL - 30_000;
@@ -75,7 +76,6 @@ export class School {
     protected teachersByName = new Map<string, TeacherOption>();
 
     protected cache = new Map<number, CacheEntry<WeekData>>();
-    protected iCalCache = new Map<number, SchoolEvent[]>();
 
     protected name = "";
 
@@ -166,7 +166,11 @@ export class School {
         };
     }
 
-    protected convertToIcalEvents(w: WeekData): SchoolEvent[] {
+    protected convertToIcalEvents(
+        w: WeekData,
+        filter: (e: OutEvent) => boolean,
+        lang: Lang = "en"
+    ): IcalEvent[] {
         const iCalTimeSlots = w.dates.map((date) =>
             w.hourOffsets.map(({ startOffset, endOffset }) => ({
                 startDate: new Date(date.valueOf() + startOffset),
@@ -174,48 +178,41 @@ export class School {
             }))
         );
         let i = 0;
-        return w.events.map((ev) => {
-            const teacher = ev.teacherKey
-                    ? this.teachersByKey.get(ev.teacherKey)
-                    : undefined,
-                room = ev.classroomKey
-                    ? this.roomsByKey.get(ev.classroomKey)
-                    : undefined,
-                sclass = ev.classKey
-                    ? this.classesByKey.get(ev.classKey)
-                    : undefined;
+        return w.events.filter(filter).map((ev) => {
+            const teacher = this.teachersByKey.get(ev.teacherKey ?? ""),
+                room = this.roomsByKey.get(ev.classroomKey ?? ""),
+                sclass = this.classesByKey.get(ev.classKey);
 
             return {
-                // unique identifier
+                // Unique identifier
                 uid: `eatt-${this.id}-${w.week}-${ev.dayIndex}-${
                     ev.periodIndex
                 }-${ev.title.short}-${i++}`,
-                // from - to
+
+                // Start and end time
                 ...iCalTimeSlots[ev.dayIndex][ev.periodIndex],
-                title: ev.title.short,
+
                 status: ev.flags.includes(EventFlag.Canceled)
                     ? "CANCELLED"
                     : "CONFIRMED",
+
+                title: ev.title.short + getFlagString(ev.flags, lang),
+
+                location: room?.display,
+
                 categories: [
                     teacher?.fullName,
                     sclass?.display,
                     room?.display,
                 ].filter((x) => !!x) as string[],
-                attendees: teacher
-                    ? [
-                          {
-                              name: teacher?.fullName,
-                          },
-                      ]
-                    : undefined,
-                description: `${ev.title.long} [${ev.flags.join(", ")}]
-Group: ${ev.groupName ?? "/"}
-Teacher: ${teacher?.fullName ?? "?"}
-Room: ${room?.display ?? "?"}
-Class: ${sclass?.display ?? "?"}`,
-                teachers: ev.teacherKey,
-                classes: ev.classKey,
-                rooms: ev.classroomKey,
+
+                description: getDescription(
+                    ev,
+                    teacher?.fullName,
+                    sclass?.display,
+                    room?.display,
+                    lang
+                ),
             };
         });
     }
@@ -236,7 +233,6 @@ Class: ${sclass?.display ?? "?"}`,
             ttl: DEFAULT_TTL,
             data,
         });
-        this.iCalCache.set(n, this.convertToIcalEvents(data));
 
         return data;
     }
@@ -291,21 +287,31 @@ Class: ${sclass?.display ?? "?"}`,
         return Math.floor(week);
     }
 
-    public ical(type: "teachers" | "rooms" | "classes", key: string) {
+    public ical(
+        type: "teachers" | "rooms" | "classes",
+        key: string,
+        lang: Lang = "en"
+    ) {
+        const MAPNAME_TO_EVENTKEY: Record<typeof type, keyof OutEvent> = {
+            classes: "classKey",
+            rooms: "classroomKey",
+            teachers: "teacherKey",
+        };
+
         const repo = this[`${type}ByKey`];
-        const atkey = repo.get(key);
+        if (!repo.has(key)) throw new NotFoundError();
 
-        if (!atkey) throw new NotFoundError();
+        const icalEvents = [...this.cache.values()]
+            .filter((x) => Date.now() - x.since <= x.ttl)
+            .flatMap((x) =>
+                this.convertToIcalEvents(
+                    x.data,
+                    (x) => x[MAPNAME_TO_EVENTKEY[type]] == key,
+                    lang
+                )
+            );
 
-        const cal = generateCalendar(
-            [...this.iCalCache.values()].flatMap((x) =>
-                x
-                    .filter((x) => x[type] == key)
-                    .map((x) => ({ ...x, calName: `${type}/${key}` }))
-            )
-        );
-
-        return cal;
+        return generateCalendar(icalEvents);
     }
 
     public async init() {

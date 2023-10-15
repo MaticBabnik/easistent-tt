@@ -2,7 +2,7 @@
     "name": "easistent-tt",
     "module": "src/index.ts",
     "type": "module",
-    "version": "4.2.0-blazeit",
+    "version": "4.2.1-za-kralja",
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^6.7.5",
         "@typescript-eslint/parser": "^6.7.5",
