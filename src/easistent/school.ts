@@ -217,12 +217,14 @@ export class School {
         });
     }
 
-    public async getWeek(n?: number): Promise<WeekData> {
+    public async getWeek(n?: number, force = false): Promise<WeekData> {
         if (typeof n !== "number") n = this.getWeekForDate();
 
-        const cached = this.cache.get(n);
-        if (cached && Date.now() - cached.since <= cached.ttl) {
-            return cached.data;
+        if (!force) {
+            const cached = this.cache.get(n);
+            if (cached && Date.now() - cached.since <= cached.ttl) {
+                return cached.data;
+            }
         }
 
         // cache is outdated or non-existent
@@ -383,13 +385,14 @@ export class School {
         this.asRunning = true;
 
         const as = () => {
+            console.log("Refreshing cache");
             const week = this.getWeekForDate();
 
             const from = Math.max(1, week - 1);
             const to = Math.min(52, week + 1);
 
             for (let i = from; i <= to; i++) {
-                this.getWeek(i);
+                this.getWeek(i, true);
             }
         };
         setInterval(as, SCRAPE_INTERVAL);
