@@ -3,7 +3,7 @@ import { School } from "./easistent/school";
 import * as at from "./apiTypes";
 import { Lang } from "./util/lang";
 
-const s = new School(process.env.SCHOOL_ID!, process.env.SCHOOL_KEY!);
+const s = new School(globalThis.process.env.SCHOOL_ID!, globalThis.process.env.SCHOOL_KEY!);
 await s.init();
 s.startAutoscrape();
 

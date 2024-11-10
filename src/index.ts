@@ -73,5 +73,5 @@ A nice-ish API for easistent's public timetables.
         }
     )
     .listen({
-        port: process.env.PORT ?? 3000,
+        port: globalThis.process.env.PORT ?? 3000,
     });
