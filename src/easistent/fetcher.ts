@@ -17,14 +17,14 @@ export class Fetcher {
     ) {
         if (r.status == 200) return;
 
-        let c = context
+        const c = context
             ? Object.entries(context)
                   .map(([k, v]) => `${k}:${v}`)
                   .join(",")
             : "";
 
         throw new Error(
-            `Failed to fetch, got ${r.status} ${r.statusText} | ` + context
+            `Failed to fetch, got ${r.status} ${r.statusText} | ` + c
         );
     }
 
@@ -55,7 +55,6 @@ export class Fetcher {
         roomId?: number;
         classId?: number;
     }) {
-        let response: Response;
         const body = new URLSearchParams({
             id_sola: this.id,
             id_razred: options.classId?.toString() ?? "0",
@@ -67,11 +66,14 @@ export class Fetcher {
             qversion: "1",
         }).toString();
 
-        response = await fetch("https://www.easistent.com/urniki/ajax_urnik", {
-            ...Fetcher.fetchOptions,
-            method: "POST",
-            body,
-        });
+        const response = await fetch(
+            "https://www.easistent.com/urniki/ajax_urnik",
+            {
+                ...Fetcher.fetchOptions,
+                method: "POST",
+                body,
+            }
+        );
 
         this.checkStatus(response, options);
 

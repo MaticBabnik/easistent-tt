@@ -42,6 +42,10 @@ A nice-ish API for easistent's public timetables.
                         name: "Developer",
                         description: "For nerds",
                     },
+                    {
+                        name: "Calendar",
+                        description: "ICAL endpoint",
+                    },
                 ],
             },
         })

@@ -8,7 +8,10 @@ import {
     Period,
     TeacherOption,
 } from "./parser";
+import { NotFoundError } from "elysia";
 import { EventFlag } from "./eventFlags";
+import { type Event as IcalEvent, generateCalendar } from "../util/ical";
+import { Lang, getDescription, getFlagString } from "../util/lang";
 
 export type SchoolError = {
     where: string;
@@ -43,6 +46,14 @@ export type WeekData = {
     events: OutEvent[];
     scrapedAt: number;
 };
+
+// type IcalFilterData = {
+//     teachers?: string;
+//     rooms?: string;
+//     classes?: string;
+// };
+
+// type IcalEvent = IcalFilterData & Event;
 
 const DEFAULT_TTL = 30 * 60 * 1000;
 const SCRAPE_INTERVAL = DEFAULT_TTL - 30_000;
@@ -107,7 +118,7 @@ export class School {
         timetablesRequests
             .filter((x) => typeof x.result === "string")
             .forEach((fail) => {
-                let { display } = this.classesByKey.get(fail.key)!;
+                const { display } = this.classesByKey.get(fail.key)!;
                 this.classesByKey.delete(fail.key);
                 this.classesByName.delete(display);
 
@@ -133,11 +144,11 @@ export class School {
                         short: evt.shortTitle,
                     },
                     flags: evt.flags,
-                    classroomKey: !!evt.classroom
+                    classroomKey: evt.classroom
                         ? this.roomsByName.get(evt.classroom)?.key
                         : undefined,
                     groupName: evt.group,
-                    teacherKey: !!evt.teacherShort
+                    teacherKey: evt.teacherShort
                         ? this.teachersByName.get(evt.teacherShort)?.key
                         : undefined,
                 };
@@ -155,12 +166,65 @@ export class School {
         };
     }
 
-    public async getWeek(n?: number): Promise<WeekData> {
+    protected convertToIcalEvents(
+        w: WeekData,
+        filter: (e: OutEvent) => boolean,
+        lang: Lang = "en"
+    ): IcalEvent[] {
+        const iCalTimeSlots = w.dates.map((date) =>
+            w.hourOffsets.map(({ startOffset, endOffset }) => ({
+                startDate: new Date(date.valueOf() + startOffset),
+                endDate: new Date(date.valueOf() + endOffset),
+            }))
+        );
+        let i = 0;
+        return w.events.filter(filter).map((ev) => {
+            const teacher = this.teachersByKey.get(ev.teacherKey ?? ""),
+                room = this.roomsByKey.get(ev.classroomKey ?? ""),
+                sclass = this.classesByKey.get(ev.classKey);
+
+            return {
+                // Unique identifier
+                uid: `eatt-${this.id}-${w.week}-${ev.dayIndex}-${
+                    ev.periodIndex
+                }-${ev.title.short}-${i++}`,
+
+                // Start and end time
+                ...iCalTimeSlots[ev.dayIndex][ev.periodIndex],
+
+                status: ev.flags.includes(EventFlag.Canceled)
+                    ? "CANCELLED"
+                    : "CONFIRMED",
+
+                title: ev.title.short + getFlagString(ev.flags, lang),
+
+                location: room?.display,
+
+                categories: [
+                    teacher?.fullName,
+                    sclass?.display,
+                    room?.display,
+                ].filter((x) => !!x) as string[],
+
+                description: getDescription(
+                    ev,
+                    teacher?.fullName,
+                    sclass?.display,
+                    room?.display,
+                    lang
+                ),
+            };
+        });
+    }
+
+    public async getWeek(n?: number, force = false): Promise<WeekData> {
         if (typeof n !== "number") n = this.getWeekForDate();
 
-        const cached = this.cache.get(n);
-        if (cached && Date.now() - cached.since <= cached.ttl) {
-            return cached.data;
+        if (!force) {
+            const cached = this.cache.get(n);
+            if (cached && Date.now() - cached.since <= cached.ttl) {
+                return cached.data;
+            }
         }
 
         // cache is outdated or non-existent
@@ -180,7 +244,7 @@ export class School {
     }
 
     private mergeTeachers(from: ParsedEvent[]) {
-        for (let ev of from) {
+        for (const ev of from) {
             if (!ev.teacherShort) continue;
             if (this.teachersByName.has(ev.teacherShort)) continue;
 
@@ -220,9 +284,36 @@ export class School {
     public getWeekForDate(date = new Date()) {
         const now = date.valueOf();
         const then = this.schoolYearEpoch.valueOf();
-        let week = (now - then) / School.WEEK + School.FLOOR_OFFSET;
+        const week = (now - then) / School.WEEK + School.FLOOR_OFFSET;
 
         return Math.floor(week);
+    }
+
+    public ical(
+        type: "teachers" | "rooms" | "classes",
+        key: string,
+        lang: Lang = "en"
+    ) {
+        const MAPNAME_TO_EVENTKEY: Record<typeof type, keyof OutEvent> = {
+            classes: "classKey",
+            rooms: "classroomKey",
+            teachers: "teacherKey",
+        };
+
+        const repo = this[`${type}ByKey`];
+        if (!repo.has(key)) throw new NotFoundError();
+
+        const icalEvents = [...this.cache.values()]
+            .filter((x) => Date.now() - x.since <= x.ttl)
+            .flatMap((x) =>
+                this.convertToIcalEvents(
+                    x.data,
+                    (x) => x[MAPNAME_TO_EVENTKEY[type]] == key,
+                    lang
+                )
+            );
+
+        return generateCalendar(icalEvents);
     }
 
     public async init() {
@@ -266,7 +357,7 @@ export class School {
         timetablesRequests
             .filter((x) => typeof x.result === "string")
             .forEach((fail) => {
-                let { display } = this.classesByKey.get(fail.key)!;
+                const { display } = this.classesByKey.get(fail.key)!;
                 this.classesByKey.delete(fail.key);
                 this.classesByName.delete(display);
 
@@ -293,14 +384,15 @@ export class School {
         if (this.asRunning) return;
         this.asRunning = true;
 
-        let as = () => {
-            let week = this.getWeekForDate();
+        const as = () => {
+            console.log("Refreshing cache");
+            const week = this.getWeekForDate();
 
-            let from = Math.max(1, week - 1);
-            let to = Math.min(52, week + 1);
+            const from = Math.max(1, week - 1);
+            const to = Math.min(52, week + 1);
 
             for (let i = from; i <= to; i++) {
-                this.getWeek(i);
+                this.getWeek(i, true);
             }
         };
         setInterval(as, SCRAPE_INTERVAL);

@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { School } from "./easistent/school";
 import * as at from "./apiTypes";
+import { Lang } from "./util/lang";
 
 const s = new School(process.env.SCHOOL_ID!, process.env.SCHOOL_KEY!);
 await s.init();
@@ -16,10 +17,25 @@ const weekHook = {
             })
         ),
     }),
-    transform({ query }: { query: any }) {
-        if (query.week) query.week = +query.week;
+    transform({ query }: { query: Record<PropertyKey, unknown> }) {
+        switch (typeof query.week) {
+            case "string": {
+                const int = parseInt(query.week);
+                if (!isNaN(int)) query.week = int;
+                else delete query.week;
+                break;
+            }
+            case "number":
+            case "undefined":
+                break;
+            default:
+                delete query.week;
+        }
     },
-    afterHandle: ({ set }: any, response: any) => {
+    afterHandle: (
+        { set }: { set: { headers: Record<PropertyKey, unknown> } },
+        response: { week?: { scrapedAt: number } }
+    ) => {
         const when = response.week?.scrapedAt;
 
         if (when) {
@@ -105,4 +121,31 @@ export default new Elysia()
             tags: ["Components"],
         },
         response: t.Object({ name: t.String() }),
-    });
+    })
+    .get(
+        "/ical/:type/:id",
+        ({ params: { type, id }, query: { lang } }) => {
+            return s.ical(
+                type as "teachers" | "classes" | "rooms",
+                id,
+                lang as Lang | undefined
+            );
+        },
+        {
+            detail: {
+                summary: "iCal",
+                tags: ["Other"],
+            },
+            params: t.Object({
+                type: t.Enum({
+                    teachers: "teachers",
+                    classes: "classes",
+                    rooms: "rooms",
+                }),
+                id: t.String(),
+            }),
+            query: t.Object({
+                lang: t.Optional(t.Enum({ en: "en", si: "si" })),
+            }),
+        }
+    );
