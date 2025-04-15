@@ -122,7 +122,9 @@ export class Parser {
     private static getEvents(mainTable: HTMLElement, key: string): RawEvent[] {
         return childrenInRange(mainTable, 1).flatMap((row, periodIndex) =>
             childrenInRange(row, 1).flatMap((cell, dayIndex) =>
-                [...cell.children].map((target) => ({
+                [
+                    ...cell.querySelectorAll(".ednevnik-seznam_ur_teden-urnik"),
+                ].map((target) => ({
                     periodIndex,
                     dayIndex,
                     target: target,

@@ -1,9 +1,12 @@
 import { Elysia, t } from "elysia";
-import { School } from "./easistent/school";
+import { School, WeekData } from "./easistent/school";
 import * as at from "./apiTypes";
 import { Lang } from "./util/lang";
 
-const s = new School(globalThis.process.env.SCHOOL_ID!, globalThis.process.env.SCHOOL_KEY!);
+const s = new School(
+    globalThis.process.env.SCHOOL_ID!,
+    globalThis.process.env.SCHOOL_KEY!
+);
 await s.init();
 s.startAutoscrape();
 
@@ -32,15 +35,11 @@ const weekHook = {
                 delete query.week;
         }
     },
-    afterHandle: (
-        { set }: { set: { headers: Record<PropertyKey, unknown> } },
-        response: { week?: { scrapedAt: number } }
-    ) => {
-        const when = response.week?.scrapedAt;
-
+    afterHandle: ({ response, set }: any) => {
+        const when = (response as { week: WeekData }).week?.scrapedAt;
         if (when) {
-            // get relative age, convert to seconds, cast to int
-            set.headers["age"] = ((Date.now() - when) / 1000) << 0;
+            // get relative age, convert to seconds
+            set.headers["age"] = ((Date.now() - when) / 1000).toFixed();
         }
     },
 };
