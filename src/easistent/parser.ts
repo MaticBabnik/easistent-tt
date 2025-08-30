@@ -1,7 +1,7 @@
 import { HTMLElement, HTMLOptionElement, parseHTML } from "linkedom";
 import slugify from "slugify";
-import { easistentDateParse, timeToOffset } from "../util/time";
 import { EventFlag, getFlags } from "./eventFlags";
+import { timeToOffset } from "../util/time";
 
 export type Option = {
     display: string;
