@@ -45,6 +45,12 @@ const weekHook = {
 };
 
 export default new Elysia()
+    .get('/health', () => 'OK', {
+        detail: {
+            summary: "Healtcheck endpoint",
+            tags: ["Developer"]
+        }
+    })
     .get(
         "/all",
         async ({ query: { week } }) => ({

@@ -96,12 +96,16 @@ export class Parser {
         return schoolNameElement.innerText.trim();
     }
 
-    private static parseDates(mainTable: HTMLElement): Date[] {
+    private static parseDates(mainTable: HTMLElement, startDate: Date): Date[] {
         return [
             ...mainTable.querySelectorAll(
                 "tr:nth-child(1) > th:not(:nth-child(1)) > div:nth-child(2)"
             ),
-        ].map((x) => easistentDateParse(x.innerHTML.trim()));
+        ].map((_, i) => new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate() + i
+        ));
     }
 
     private static parseHours(mainTable: HTMLElement): Period[] {
@@ -177,8 +181,27 @@ export class Parser {
         };
     }
 
+    protected static readonly DATE_HEADER_REGEX = /^(\d+)\u001f(\d+)\.\s*(\d+)\.\s*(\d+)\u001f/u;
+
+    protected parseWeek(html: string): { startDate: Date, number: number } {
+        const match = html.match(Parser.DATE_HEADER_REGEX);
+
+        if (match === null) {
+            throw new Error("HTML is missing the week header");
+        }
+
+        const [week, day, month, year] = match.slice(1, 5).map(x => parseInt(x));
+
+        return {
+            startDate: new Date(year, month - 1, day),
+            number: week,
+        };
+    }
+
     public parseTimetable(html: string, key: string): ParseResult | string {
         const { document } = parseHTML(html);
+
+        const week = this.parseWeek(html);
 
         const mainTable = document.querySelector(
             "table.ednevnik-seznam_ur_teden"
@@ -186,7 +209,7 @@ export class Parser {
 
         if (!mainTable) return "Could not find main table!";
 
-        const dates = Parser.parseDates(mainTable);
+        const dates = Parser.parseDates(mainTable, week.startDate);
         const hourOffsets = Parser.parseHours(mainTable);
         const events = Parser.getEvents(mainTable, key).map((x) =>
             Parser.parseEventHtml(x)

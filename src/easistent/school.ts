@@ -185,9 +185,8 @@ export class School {
 
             return {
                 // Unique identifier
-                uid: `eatt-${this.id}-${w.week}-${ev.dayIndex}-${
-                    ev.periodIndex
-                }-${ev.title.short}-${i++}`,
+                uid: `eatt-${this.id}-${w.week}-${ev.dayIndex}-${ev.periodIndex
+                    }-${ev.title.short}-${i++}`,
 
                 // Start and end time
                 ...iCalTimeSlots[ev.dayIndex][ev.periodIndex],
@@ -219,6 +218,7 @@ export class School {
 
     public async getWeek(n?: number, force = false): Promise<WeekData> {
         if (typeof n !== "number") n = this.getWeekForDate();
+        if (n === 0) n = 1;
 
         if (!force) {
             const cached = this.cache.get(n);
