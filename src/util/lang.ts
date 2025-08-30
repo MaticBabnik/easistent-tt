@@ -1,13 +1,9 @@
-import { EventFlag } from "../easistent/eventFlags";
-import { OutEvent } from "../easistent/school";
+import type { EventFlag } from "../easistent/eventFlags";
+import type { OutEvent } from "../easistent/school";
 
 export type Lang = "si" | "en";
 
-export function getFlagName(
-    flag: EventFlag,
-    lang: Lang = "en",
-    short: boolean
-): string {
+export function getFlagName(flag: EventFlag, lang: Lang = "en", short: boolean): string {
     const FLAGNAMES: Record<Lang, Record<EventFlag, Record<1 | 0, string>>> = {
         en: {
             CANCELED: ["Canceled", "X"],
@@ -34,14 +30,10 @@ export function getFlagName(
     return FLAGNAMES[lang][flag][short ? 1 : 0];
 }
 
-export function getFlagString(
-    f: EventFlag[],
-    lang: Lang = "en",
-    short = true
-): string {
-    if (f.length == 0) return "";
+export function getFlagString(f: EventFlag[], lang: Lang = "en", short = true): string {
+    if (f.length === 0) return "";
 
-    return " (" + f.map((x) => getFlagName(x, lang, short)).join(", ") + ")";
+    return ` (${f.map((x) => getFlagName(x, lang, short)).join(", ")})`;
 }
 
 export function getDescription(

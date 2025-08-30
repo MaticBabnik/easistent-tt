@@ -1,12 +1,10 @@
-import { Elysia } from "elysia";
 import { setTimeZone } from "bun:jsc";
 import { swagger } from "@elysiajs/swagger";
-// this should be "with", but "assert" has better editor/TS support
-import { getBuildInfo } from "./util/buildInfo" assert { type: "macro" };
-import pkg from "../package.json" assert { type: "json" };
-
+import { Elysia } from "elysia";
+import pkg from "../package.json" with { type: "json" };
 import api from "./api";
-import * as at from "./apiTypes";
+import { Dev } from "./apiTypes";
+import { getBuildInfo } from "./util/buildInfo" with { type: "macro" };
 
 setTimeZone("Europe/Ljubljana"); // For now easistent is only available in Slovenia
 
@@ -69,7 +67,7 @@ A nice-ish API for easistent's public timetables.
                 summary: "Information about the deployment",
                 tags: ["Developer"],
             },
-            response: at.Dev,
+            response: Dev,
         }
     )
     .listen({

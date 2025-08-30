@@ -4,7 +4,8 @@
     It seems to work with Google Calendar and Mozilla Thunderbird
 */
 
-import { getBuildInfo } from "./buildInfo" assert { type: "macro" };
+import { getBuildInfo } from "./buildInfo" with { type: "macro" };
+
 const bi = getBuildInfo();
 
 const ICAL_HEADER = [
@@ -29,9 +30,7 @@ export type Event = {
 };
 
 function escapeContent(text: string) {
-    return text
-        .replace(/[\\;,]/g, (x) => `\\${x}`)
-        .replace(/(\n|\r\n)/g, "\\n");
+    return text.replace(/[\\;,]/g, (x) => `\\${x}`).replace(/(\n|\r\n)/g, "\\n");
 }
 
 function addEvent(lines: string[], event: Event) {
@@ -44,15 +43,10 @@ function addEvent(lines: string[], event: Event) {
     lines.push(generateDateProperty("DTEND", event.endDate));
 
     lines.push(`SUMMARY:${escapeContent(event.title)}`);
-    if (event.description)
-        lines.push(`DESCRIPTION:${escapeContent(event.description)}`);
+    if (event.description) lines.push(`DESCRIPTION:${escapeContent(event.description)}`);
 
     if (event.categories) {
-        lines.push(
-            `CATEGORIES:${event.categories
-                .map((x) => escapeContent(x))
-                .join(",")}`
-        );
+        lines.push(`CATEGORIES:${event.categories.map((x) => escapeContent(x)).join(",")}`);
     }
 
     if (event.status) {

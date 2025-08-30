@@ -2,18 +2,16 @@
     "name": "easistent-tt",
     "module": "src/index.ts",
     "type": "module",
-    "version": "4.3.0-revengeseekerz",
+    "version": "4.3.1-i-love-my-computer",
     "devDependencies": {
         "bun-types": "latest",
-        "typescript": "^5.8.3"
+        "typescript": "^5.8.3",
+        "@biomejs/biome": "2.0.6"
     },
     "dependencies": {
         "@elysiajs/swagger": "^1.2.2",
         "@types/web": "^0.0.217",
-        "@typescript-eslint/eslint-plugin": "^8.29.1",
-        "@typescript-eslint/parser": "^8.29.1",
         "elysia": "^1.2.25",
-        "eslint": "^9.24.0",
         "linkedom": "^0.18.9",
         "slugify": "^1.6.6"
     },

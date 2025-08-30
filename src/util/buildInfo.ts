@@ -12,21 +12,14 @@ function hasGit() {
 
 function getCommitInfo() {
     const proc = Bun.spawnSync({
-        cmd: [
-            "git",
-            "log",
-            "-n",
-            "1",
-            "--abbrev=-1",
-            "--format=tformat:'%D\n%h\n%s",
-        ],
+        cmd: ["git", "log", "-n", "1", "--abbrev=-1", "--format=tformat:'%D\n%h\n%s"],
         stdout: "pipe",
     });
     return proc.stdout
         .toString()
         .split("\n")
-        .map((x) => x.trim())
-        .filter((x) => x.length > 0);
+        .map((x: string) => x.trim())
+        .filter((x: string) => x.length > 0);
 }
 
 function getOrignInfo() {
@@ -35,7 +28,7 @@ function getOrignInfo() {
         stdout: "pipe",
     });
 
-    if (proc.exitCode != 0) return "?";
+    if (proc.exitCode !== 0) return "?";
     return proc.stdout.toString().trim();
 }
 

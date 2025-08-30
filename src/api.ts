@@ -1,12 +1,15 @@
 import { Elysia, t } from "elysia";
-import { School, WeekData } from "./easistent/school";
-import * as at from "./apiTypes";
-import { Lang } from "./util/lang";
+import { at } from "./apiTypes";
+import { School, type WeekData } from "./easistent/school";
+import type { Lang } from "./util/lang";
 
-const s = new School(
-    globalThis.process.env.SCHOOL_ID!,
-    globalThis.process.env.SCHOOL_KEY!
-);
+const schoolId = globalThis.process.env.SCHOOL_ID;
+const schoolKey = globalThis.process.env.SCHOOL_KEY;
+if (!schoolId || !schoolKey) {
+    throw new Error("Missing env vars");
+}
+
+const s = new School(schoolId, schoolKey);
 await s.init();
 s.startAutoscrape();
 
@@ -24,27 +27,34 @@ const weekHook = {
         switch (typeof query.week) {
             case "string": {
                 const int = parseInt(query.week);
-                if (!isNaN(int)) query.week = int;
-                else delete query.week;
+                if (!Number.isNaN(int)) query.week = int;
+                else query.week = undefined;
                 break;
             }
             case "number":
             case "undefined":
                 break;
             default:
-                delete query.week;
+                query.week = undefined;
         }
     },
+    // biome-ignore lint/suspicious/noExplicitAny: CBA
     afterHandle: ({ response, set }: any) => {
         const when = (response as { week: WeekData }).week?.scrapedAt;
         if (when) {
             // get relative age, convert to seconds
-            set.headers["age"] = ((Date.now() - when) / 1000).toFixed();
+            set.headers.age = ((Date.now() - when) / 1000).toFixed(0);
         }
     },
 };
 
 export default new Elysia()
+    .get("/health", () => "OK", {
+        detail: {
+            summary: "Healtcheck endpoint",
+            tags: ["Developer"],
+        },
+    })
     .get(
         "/all",
         async ({ query: { week } }) => ({
@@ -91,7 +101,7 @@ export default new Elysia()
             summary: "Lists all parser errors",
             tags: ["Developer"],
         },
-        response: t.Object({ errors: t.Array(at.Error) }),
+        response: t.Object({ errors: t.Array(at.MError) }),
     })
     .get("/teachers", () => ({ teachers: s.Teachers }), {
         detail: {
@@ -124,11 +134,7 @@ export default new Elysia()
     .get(
         "/ical/:type/:id",
         ({ params: { type, id }, query: { lang } }) => {
-            return s.ical(
-                type as "teachers" | "classes" | "rooms",
-                id,
-                lang as Lang | undefined
-            );
+            return s.ical(type as "teachers" | "classes" | "rooms", id, lang as Lang | undefined);
         },
         {
             detail: {
