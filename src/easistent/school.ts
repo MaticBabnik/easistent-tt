@@ -1,17 +1,19 @@
+/** biome-ignore-all lint/suspicious/noConsole: API logging */
+
+import { NotFoundError } from "elysia";
 import slugify from "slugify";
+import { generateCalendar, type Event as IcalEvent } from "../util/ical";
+import { getDescription, getFlagString, type Lang } from "../util/lang";
+import { EventFlag } from "./eventFlags";
 import { Fetcher } from "./fetcher";
 import {
-    Option,
-    ParseResult,
-    ParsedEvent,
+    type Option,
+    type ParsedEvent,
+    type ParseResult,
     Parser,
-    Period,
-    TeacherOption,
+    type Period,
+    type TeacherOption,
 } from "./parser";
-import { NotFoundError } from "elysia";
-import { EventFlag } from "./eventFlags";
-import { type Event as IcalEvent, generateCalendar } from "../util/ical";
-import { Lang, getDescription, getFlagString } from "../util/lang";
 
 export type SchoolError = {
     where: string;
@@ -46,14 +48,6 @@ export type WeekData = {
     events: OutEvent[];
     scrapedAt: number;
 };
-
-// type IcalFilterData = {
-//     teachers?: string;
-//     rooms?: string;
-//     classes?: string;
-// };
-
-// type IcalEvent = IcalFilterData & Event;
 
 const DEFAULT_TTL = 30 * 60 * 1000;
 const SCRAPE_INTERVAL = DEFAULT_TTL - 30_000;
@@ -118,6 +112,7 @@ export class School {
         timetablesRequests
             .filter((x) => typeof x.result === "string")
             .forEach((fail) => {
+                // biome-ignore lint/style/noNonNullAssertion: This is ok as key are soruced from this map
                 const { display } = this.classesByKey.get(fail.key)!;
                 this.classesByKey.delete(fail.key);
                 this.classesByName.delete(display);
@@ -185,25 +180,20 @@ export class School {
 
             return {
                 // Unique identifier
-                uid: `eatt-${this.id}-${w.week}-${ev.dayIndex}-${ev.periodIndex
-                    }-${ev.title.short}-${i++}`,
+                uid: `eatt-${this.id}-${w.week}-${ev.dayIndex}-${ev.periodIndex}-${ev.title.short}-${i++}`,
 
                 // Start and end time
                 ...iCalTimeSlots[ev.dayIndex][ev.periodIndex],
 
-                status: ev.flags.includes(EventFlag.Canceled)
-                    ? "CANCELLED"
-                    : "CONFIRMED",
+                status: ev.flags.includes(EventFlag.Canceled) ? "CANCELLED" : "CONFIRMED",
 
                 title: ev.title.short + getFlagString(ev.flags, lang),
 
                 location: room?.display,
 
-                categories: [
-                    teacher?.fullName,
-                    sclass?.display,
-                    room?.display,
-                ].filter((x) => !!x) as string[],
+                categories: [teacher?.fullName, sclass?.display, room?.display].filter(
+                    (x) => !!x
+                ) as string[],
 
                 description: getDescription(
                     ev,
@@ -239,7 +229,10 @@ export class School {
         return data;
     }
 
-    constructor(protected id: string, protected key: string) {
+    constructor(
+        protected id: string,
+        protected key: string
+    ) {
         this.fetcher = new Fetcher(id, key);
     }
 
@@ -289,11 +282,7 @@ export class School {
         return Math.floor(week);
     }
 
-    public ical(
-        type: "teachers" | "rooms" | "classes",
-        key: string,
-        lang: Lang = "en"
-    ) {
+    public ical(type: "teachers" | "rooms" | "classes", key: string, lang: Lang = "en") {
         const MAPNAME_TO_EVENTKEY: Record<typeof type, keyof OutEvent> = {
             classes: "classKey",
             rooms: "classroomKey",
@@ -306,11 +295,7 @@ export class School {
         const icalEvents = [...this.cache.values()]
             .filter((x) => Date.now() - x.since <= x.ttl)
             .flatMap((x) =>
-                this.convertToIcalEvents(
-                    x.data,
-                    (x) => x[MAPNAME_TO_EVENTKEY[type]] == key,
-                    lang
-                )
+                this.convertToIcalEvents(x.data, (x) => x[MAPNAME_TO_EVENTKEY[type]] === key, lang)
             );
 
         return generateCalendar(icalEvents);
@@ -357,6 +342,7 @@ export class School {
         timetablesRequests
             .filter((x) => typeof x.result === "string")
             .forEach((fail) => {
+                // biome-ignore lint/style/noNonNullAssertion: This is ok as key are soruced from this map
                 const { display } = this.classesByKey.get(fail.key)!;
                 this.classesByKey.delete(fail.key);
                 this.classesByName.delete(display);

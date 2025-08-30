@@ -55,7 +55,7 @@ export const TeacherOption = t.Object({
     fullName: t.String(),
 });
 
-export const Error = t.Object({
+export const MError = t.Object({
     where: t.String(),
     what: t.String(),
     when: tDate,
@@ -75,3 +75,14 @@ export const Dev = t.Object({
     }),
     apiVersion: t.String(),
 });
+
+export const at = {
+    Period,
+    EventFlag,
+    Event,
+    WeekData,
+    Option,
+    TeacherOption,
+    MError,
+    Dev,
+} as const;

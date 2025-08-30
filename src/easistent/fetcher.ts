@@ -9,13 +9,13 @@ export class Fetcher {
         redirect: "error",
     };
 
-    constructor(protected id: string, protected key: string) {}
+    constructor(
+        protected id: string,
+        protected key: string
+    ) {}
 
-    private checkStatus(
-        r: Response,
-        context?: Record<string, string | number>
-    ) {
-        if (r.status == 200) return;
+    private checkStatus(r: Response, context?: Record<string, string | number>) {
+        if (r.status === 200) return;
 
         const c = context
             ? Object.entries(context)
@@ -23,9 +23,7 @@ export class Fetcher {
                   .join(",")
             : "";
 
-        throw new Error(
-            `Failed to fetch, got ${r.status} ${r.statusText} | ` + c
-        );
+        throw new Error(`Failed to fetch, got ${r.status} ${r.statusText} | ${c}`);
     }
 
     private async genericGet(url: string) {
@@ -41,20 +39,14 @@ export class Fetcher {
     }
 
     public async getClassesPage() {
-        return this.genericGet(`https://www.easistent.com/urniki/${this.key}`);
+        return await this.genericGet(`https://www.easistent.com/urniki/${this.key}`);
     }
 
     public async getRoomsPage() {
-        return this.genericGet(
-            `https://www.easistent.com/urniki/${this.key}/ucilnice`
-        );
+        return await this.genericGet(`https://www.easistent.com/urniki/${this.key}/ucilnice`);
     }
 
-    public async getTimetable(options: {
-        week: number;
-        roomId?: number;
-        classId?: number;
-    }) {
+    public async getTimetable(options: { week: number; roomId?: number; classId?: number }) {
         const body = new URLSearchParams({
             id_sola: this.id,
             id_razred: options.classId?.toString() ?? "0",
@@ -66,14 +58,11 @@ export class Fetcher {
             qversion: "1",
         }).toString();
 
-        const response = await fetch(
-            "https://www.easistent.com/urniki/ajax_urnik",
-            {
-                ...Fetcher.fetchOptions,
-                method: "POST",
-                body,
-            }
-        );
+        const response = await fetch("https://www.easistent.com/urniki/ajax_urnik", {
+            ...Fetcher.fetchOptions,
+            method: "POST",
+            body,
+        });
 
         this.checkStatus(response, options);
 

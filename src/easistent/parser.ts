@@ -1,7 +1,7 @@
-import { HTMLElement, HTMLOptionElement, parseHTML } from "linkedom";
+import { type HTMLElement, type HTMLOptionElement, parseHTML } from "linkedom";
 import slugify from "slugify";
-import { EventFlag, getFlags } from "./eventFlags";
 import { timeToOffset } from "../util/time";
+import { type EventFlag, getFlags } from "./eventFlags";
 
 export type Option = {
     display: string;
@@ -63,7 +63,7 @@ function childrenInRange(el: HTMLElement, start = 0, end = 0): HTMLElement[] {
     if (end >= max) throw new Error("end is out of bounds");
     if (end <= 0) end = max - 1 - end;
 
-    const arr = [];
+    const arr: HTMLElement[] = [];
 
     for (let i = start; i <= end; i++) {
         arr.push(el.children[i]);
@@ -80,11 +80,9 @@ export class Parser {
             ...document.querySelectorAll("#id_parameter>option"),
         ] as unknown as HTMLOptionElement[];
 
-        if (options.length == 0) throw new Error("Error parsing options");
+        if (options.length === 0) throw new Error("Error parsing options");
 
-        return options.map((x) =>
-            makeOption(x.innerHTML.trim(), parseInt(x.value))
-        );
+        return options.map((x) => makeOption(x.innerHTML.trim(), parseInt(x.value)));
     }
 
     public parseName(html: string): string {
@@ -101,19 +99,14 @@ export class Parser {
             ...mainTable.querySelectorAll(
                 "tr:nth-child(1) > th:not(:nth-child(1)) > div:nth-child(2)"
             ),
-        ].map((_, i) => new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate() + i
-        ));
+        ].map(
+            (_, i) =>
+                new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i)
+        );
     }
 
     private static parseHours(mainTable: HTMLElement): Period[] {
-        return [
-            ...mainTable.querySelectorAll(
-                ".ednevnik-seznam_ur_teden-ura > .gray"
-            ),
-        ].map((x) => {
+        return [...mainTable.querySelectorAll(".ednevnik-seznam_ur_teden-ura > .gray")].map((x) => {
             const [start, end] = x.innerHTML.trim().split(" - ");
 
             return {
@@ -126,9 +119,7 @@ export class Parser {
     private static getEvents(mainTable: HTMLElement, key: string): RawEvent[] {
         return childrenInRange(mainTable, 1).flatMap((row, periodIndex) =>
             childrenInRange(row, 1).flatMap((cell, dayIndex) =>
-                [
-                    ...cell.querySelectorAll(".ednevnik-seznam_ur_teden-urnik"),
-                ].map((target) => ({
+                [...cell.querySelectorAll(".ednevnik-seznam_ur_teden-urnik")].map((target) => ({
                     periodIndex,
                     dayIndex,
                     target: target,
@@ -142,28 +133,21 @@ export class Parser {
         // le cursed
         const { dayIndex, key, periodIndex, target } = e;
 
-        const flagElements = [
-            ...target.querySelectorAll('td[align="right"] > img'),
-        ];
+        const flagElements = [...target.querySelectorAll('td[align="right"] > img')];
         const titleElement =
-            target.querySelector("td.bold > span") ??
-            target.querySelector("td.text14.bold"); // fallback for events
-        const teacherAndRoomElement = target.querySelector(
-            ".text11:not(.gray.bold)"
-        );
+            target.querySelector("td.bold > span") ?? target.querySelector("td.text14.bold"); // fallback for events
+        const teacherAndRoomElement = target.querySelector(".text11:not(.gray.bold)");
         const groupElement = target.querySelector("text11.gray.bold");
 
         const flags = getFlags(flagElements);
         const shortTitle = titleElement?.innerText?.trim();
         const longTitle = titleElement?.attributes?.title?.value?.trim();
 
-        const teacherAndClassroom =
-            teacherAndRoomElement?.innerText?.split(", ");
+        const teacherAndClassroom = teacherAndRoomElement?.innerText?.split(", ");
 
         const teacherShort = teacherAndClassroom?.[0]?.trim();
         const classroom = teacherAndClassroom?.[1]?.trim();
-        const teacherLong =
-            teacherAndRoomElement?.attributes?.title?.value?.trim();
+        const teacherLong = teacherAndRoomElement?.attributes?.title?.value?.trim();
 
         const group = groupElement?.innerText;
 
@@ -181,16 +165,17 @@ export class Parser {
         };
     }
 
-    protected static readonly DATE_HEADER_REGEX = /^(\d+)\u001f(\d+)\.\s*(\d+)\.\s*(\d+)\u001f/u;
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: u001f is used as seperator
+    static readonly DATE_HEADER_REGEX = /^(\d+)\u001f(\d+)\.\s*(\d+)\.\s*(\d+)\u001f/u;
 
-    protected parseWeek(html: string): { startDate: Date, number: number } {
+    protected parseWeek(html: string): { startDate: Date; number: number } {
         const match = html.match(Parser.DATE_HEADER_REGEX);
 
         if (match === null) {
             throw new Error("HTML is missing the week header");
         }
 
-        const [week, day, month, year] = match.slice(1, 5).map(x => parseInt(x));
+        const [week, day, month, year] = match.slice(1, 5).map((x) => parseInt(x));
 
         return {
             startDate: new Date(year, month - 1, day),
@@ -211,9 +196,7 @@ export class Parser {
 
         const dates = Parser.parseDates(mainTable, week.startDate);
         const hourOffsets = Parser.parseHours(mainTable);
-        const events = Parser.getEvents(mainTable, key).map((x) =>
-            Parser.parseEventHtml(x)
-        );
+        const events = Parser.getEvents(mainTable, key).map((x) => Parser.parseEventHtml(x));
 
         return {
             dates,
