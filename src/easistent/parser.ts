@@ -1,7 +1,7 @@
 import { type HTMLElement, type HTMLOptionElement, parseHTML } from "linkedom";
 import slugify from "slugify";
 import { timeToOffset } from "../util/time";
-import { type EventFlag, getFlags } from "./eventFlags";
+import { type EventFlag, FLAG_MAP } from "./eventFlags";
 
 export type Option = {
     display: string;
@@ -39,7 +39,7 @@ export type ParsedEvent = {
     teacherLong?: string;
     teacherShort?: string;
     classroom?: string;
-    group?: string;
+    groups: string[];
 } & Event;
 
 export type ParseResult = {
@@ -56,20 +56,16 @@ function makeOption(k: string, v: number): Option {
     };
 }
 
-function childrenInRange(el: HTMLElement, start = 0, end = 0): HTMLElement[] {
+function* childrenInRange(el: HTMLElement, start = 0, end = 0) {
     const max = el.childElementCount;
 
     if (start > max || start < 0) throw new Error("start is out of bounds");
     if (end >= max) throw new Error("end is out of bounds");
     if (end <= 0) end = max - 1 - end;
 
-    const arr: HTMLElement[] = [];
-
     for (let i = start; i <= end; i++) {
-        arr.push(el.children[i]);
+        yield el.children[i];
     }
-
-    return arr;
 }
 
 export class Parser {
@@ -88,25 +84,21 @@ export class Parser {
     public parseName(html: string): string {
         const { document } = parseHTML(html);
         const schoolNameElement = document.querySelector(
-            "#okvir_prijava > h1 > span"
+            "#okvir_glavni > .urnik_title"
         ) as unknown as HTMLSpanElement;
 
         return schoolNameElement.innerText.trim();
     }
 
     private static parseDates(mainTable: HTMLElement, startDate: Date): Date[] {
-        return [
-            ...mainTable.querySelectorAll(
-                "tr:nth-child(1) > th:not(:nth-child(1)) > div:nth-child(2)"
-            ),
-        ].map(
+        return [...mainTable.querySelectorAll("thead .date")].map(
             (_, i) =>
                 new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + i)
         );
     }
 
     private static parseHours(mainTable: HTMLElement): Period[] {
-        return [...mainTable.querySelectorAll(".ednevnik-seznam_ur_teden-ura > .gray")].map((x) => {
+        return [...mainTable.querySelectorAll(".potek-ure")].map((x) => {
             const [start, end] = x.innerHTML.trim().split(" - ");
 
             return {
@@ -117,39 +109,54 @@ export class Parser {
     }
 
     private static getEvents(mainTable: HTMLElement, key: string): RawEvent[] {
-        return childrenInRange(mainTable, 1).flatMap((row, periodIndex) =>
-            childrenInRange(row, 1).flatMap((cell, dayIndex) =>
-                [...cell.querySelectorAll(".ednevnik-seznam_ur_teden-urnik")].map((target) => ({
-                    periodIndex,
-                    dayIndex,
-                    target: target,
-                    key,
-                }))
+        return childrenInRange(mainTable, 1)
+            .flatMap((row, periodIndex) =>
+                childrenInRange(row, 1).flatMap((cell, dayIndex) =>
+                    [...cell.querySelectorAll(".ednevnik-seznam_ur_teden-urnik")].map((target) => ({
+                        periodIndex,
+                        dayIndex,
+                        target: target,
+                        key,
+                    }))
+                )
             )
-        );
+            .toArray();
     }
 
     private static parseEventHtml(e: RawEvent): ParsedEvent {
         // le cursed
         const { dayIndex, key, periodIndex, target } = e;
 
-        const flagElements = [...target.querySelectorAll('td[align="right"] > img')];
-        const titleElement =
-            target.querySelector("td.bold > span") ?? target.querySelector("td.text14.bold"); // fallback for events
-        const teacherAndRoomElement = target.querySelector(".text11:not(.gray.bold)");
-        const groupElement = target.querySelector("text11.gray.bold");
+        const flagElements = [...target.querySelectorAll(".wl-tag-xs")] as HTMLDivElement[];
 
-        const flags = getFlags(flagElements);
+        const titleElement =
+            target.querySelector(".ednevnik-title>span") ?? target.querySelector(".ednevnik-title");
+
         const shortTitle = titleElement?.innerText?.trim();
         const longTitle = titleElement?.attributes?.title?.value?.trim();
 
-        const teacherAndClassroom = teacherAndRoomElement?.innerText?.split(", ");
+        const subtitleElements = [
+            ...target.querySelectorAll(".ednevnik-subtitle"),
+        ] as HTMLDivElement[];
+
+        const teacherAndRoomElement = subtitleElements.at(0);
+        const groupElements = subtitleElements.slice(1);
+
+        const teacherAndClassroom = teacherAndRoomElement?.innerText
+            ?.split(", ")
+            ?.map((x) => x.trim());
 
         const teacherShort = teacherAndClassroom?.[0]?.trim();
         const classroom = teacherAndClassroom?.[1]?.trim();
-        const teacherLong = teacherAndRoomElement?.attributes?.title?.value?.trim();
+        const teacherLong = teacherAndRoomElement?.title?.trim();
 
-        const group = groupElement?.innerText;
+        const flags = new Set(flagElements.flatMap((x) => [...x.classList]))
+            .values()
+            .map((x) => FLAG_MAP[x])
+            .filter<EventFlag>((x) => !!x)
+            .toArray();
+
+        const groups = groupElements.map((x) => x.innerText.trim());
 
         return {
             dayIndex,
@@ -161,7 +168,7 @@ export class Parser {
             teacherLong,
             teacherShort,
             classroom,
-            group,
+            groups,
         };
     }
 

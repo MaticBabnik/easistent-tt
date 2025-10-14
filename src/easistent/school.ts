@@ -36,7 +36,7 @@ export type OutEvent = {
     flags: EventFlag[];
     teacherKey?: string;
     classroomKey?: string;
-    groupName?: string;
+    groupNames: string[];
     dayIndex: number;
     periodIndex: number;
 };
@@ -142,7 +142,7 @@ export class School {
                     classroomKey: evt.classroom
                         ? this.roomsByName.get(evt.classroom)?.key
                         : undefined,
-                    groupName: evt.group,
+                    groupNames: evt.groups,
                     teacherKey: evt.teacherShort
                         ? this.teachersByName.get(evt.teacherShort)?.key
                         : undefined,
@@ -185,7 +185,7 @@ export class School {
                 // Start and end time
                 ...iCalTimeSlots[ev.dayIndex][ev.periodIndex],
 
-                status: ev.flags.includes(EventFlag.Canceled) ? "CANCELLED" : "CONFIRMED",
+                status: ev.flags.includes(EventFlag.Cancelled) ? "CANCELLED" : "CONFIRMED",
 
                 title: ev.title.short + getFlagString(ev.flags, lang),
 

@@ -1,3 +1,14 @@
+export type TimetableRequestParams = {
+    schoolId?: number;
+    classId?: number;
+    teacherId?: number;
+    studentId?: number;
+    roomId?: number;
+    week?: number;
+    activityId?: number;
+    qversion?: number;
+};
+
 export class Fetcher {
     private static readonly fetchOptions: RequestInit = {
         method: "GET",
@@ -7,6 +18,7 @@ export class Fetcher {
             accept: "text/html",
         },
         redirect: "error",
+        // ...({ verbose: true } as unknown as RequestInit),
     };
 
     constructor(
@@ -15,7 +27,7 @@ export class Fetcher {
     ) {}
 
     private checkStatus(r: Response, context?: Record<string, string | number>) {
-        if (r.status === 200) return;
+        if (r.ok) return;
 
         const c = context
             ? Object.entries(context)
@@ -30,41 +42,38 @@ export class Fetcher {
         let response: Response;
         try {
             response = await fetch(url, Fetcher.fetchOptions);
-            if (!this.checkStatus) throw new Error(`Fetch failed for ${url}`);
-        } catch {
-            throw new Error(`Fetch failed for ${url}`);
+            this.checkStatus(response);
+        } catch (cause) {
+            throw new Error(`Fetch failed for ${url}`, { cause });
         }
 
         return await response.text(); // can this fail?
     }
 
     public async getClassesPage() {
-        return await this.genericGet(`https://www.easistent.com/urniki/${this.key}`);
+        return await this.genericGet(`https://urniki.easistent.com/urniki/${this.key}`);
     }
 
     public async getRoomsPage() {
-        return await this.genericGet(`https://www.easistent.com/urniki/${this.key}/ucilnice`);
+        return await this.genericGet(`https://urniki.easistent.com/urniki/${this.key}/ucilnice/0`);
     }
 
-    public async getTimetable(options: { week: number; roomId?: number; classId?: number }) {
-        const body = new URLSearchParams({
-            id_sola: this.id,
-            id_razred: options.classId?.toString() ?? "0",
-            id_profesor: "0",
-            id_dijak: "0",
-            id_ucilnica: options.roomId?.toString() ?? "0",
-            id_interesna_dejavnost: "0",
-            teden: options.week?.toString(),
-            qversion: "1",
-        }).toString();
+    public async getTimetable(params: TimetableRequestParams) {
+        const url = [
+            "https://urniki.easistent.com/urniki/ajax_urnik",
+            params.schoolId ?? this.id,
+            params.classId ?? 0,
+            params.teacherId ?? 0,
+            params.studentId ?? 0,
+            params.roomId ?? 0,
+            params.week ?? 0,
+            params.activityId ?? 0,
+            params.qversion ? `?_=${params.qversion}` : "",
+        ].join("/");
 
-        const response = await fetch("https://www.easistent.com/urniki/ajax_urnik", {
-            ...Fetcher.fetchOptions,
-            method: "POST",
-            body,
-        });
+        const response = await fetch(url, Fetcher.fetchOptions);
 
-        this.checkStatus(response, options);
+        this.checkStatus(response, params);
 
         return await response.text();
     }
