@@ -68,7 +68,7 @@ export function getDescription(
     if (sclass) {
         lines.push(S[lang].class + sclass);
     }
-    if (ev.groupNames) {
+    if (ev.groupNames.length > 0) {
         lines.push(S[lang].group + ev.groupNames.join(", "));
     }
 
