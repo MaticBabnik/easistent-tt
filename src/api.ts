@@ -26,7 +26,7 @@ const weekHook = {
     transform({ query }: { query: Record<PropertyKey, unknown> }) {
         switch (typeof query.week) {
             case "string": {
-                const int = parseInt(query.week);
+                const int = parseInt(query.week, 10);
                 if (!Number.isNaN(int)) query.week = int;
                 else query.week = undefined;
                 break;

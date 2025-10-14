@@ -78,7 +78,7 @@ export class Parser {
 
         if (options.length === 0) throw new Error("Error parsing options");
 
-        return options.map((x) => makeOption(x.innerHTML.trim(), parseInt(x.value)));
+        return options.map((x) => makeOption(x.innerHTML.trim(), parseInt(x.value, 10)));
     }
 
     public parseName(html: string): string {
@@ -182,7 +182,7 @@ export class Parser {
             throw new Error("HTML is missing the week header");
         }
 
-        const [week, day, month, year] = match.slice(1, 5).map((x) => parseInt(x));
+        const [week, day, month, year] = match.slice(1, 5).map((x) => parseInt(x, 10));
 
         return {
             startDate: new Date(year, month - 1, day),
