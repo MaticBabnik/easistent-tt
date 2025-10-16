@@ -158,7 +158,8 @@ export class Parser {
         } else if (teacherAndRoomElement) {
             // **Ucilnice** ${ucilnice} workaround for "dogodek"
             const olderSibling = teacherAndRoomElement.previousElementSibling as HTMLDivElement;
-            if (olderSibling.className === 'ednevnik-title') {
+            
+            if (olderSibling?.className === 'ednevnik-title') {
                 const potentialClassrooms = teacherAndRoomElement.innerText.split(',').map(x => x.trim()).filter(x => x && x.length > 0);
 
                 if (potentialClassrooms.length === 1) {
