@@ -2,7 +2,7 @@
     "name": "easistent-tt",
     "module": "src/index.ts",
     "type": "module",
-    "version": "4.4.0-evil-world",
+    "version": "4.4.1-evil-world",
     "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.8.3",
