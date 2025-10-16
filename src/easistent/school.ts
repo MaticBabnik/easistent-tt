@@ -240,11 +240,11 @@ export class School {
         for (const ev of from) {
             if (!ev.teacherShort) continue;
             if (this.teachersByName.has(ev.teacherShort)) continue;
-
             let longestName = ev.teacherLong ?? ev.teacherShort;
 
             if (longestName === "Aiken Tine Ahac") {
                 longestName = "Tine Ahac"; // Zivjo Aiken :)
+                // aiken ze lep cajt ne uci vec ampak to je tle za vedno :)
             }
 
             const key = slugify(longestName, { lower: true });

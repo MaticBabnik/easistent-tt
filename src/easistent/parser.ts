@@ -2,6 +2,7 @@ import { type HTMLElement, type HTMLOptionElement, parseHTML } from "linkedom";
 import slugify from "slugify";
 import { timeToOffset } from "../util/time";
 import { type EventFlag, FLAG_MAP } from "./eventFlags";
+import { strcan } from "../util";
 
 export type Option = {
     display: string;
@@ -132,8 +133,12 @@ export class Parser {
         const titleElement =
             target.querySelector(".ednevnik-title>span") ?? target.querySelector(".ednevnik-title");
 
-        const shortTitle = titleElement?.innerText?.trim();
-        const longTitle = titleElement?.attributes?.title?.value?.trim();
+        const shortTitle = strcan(titleElement?.innerText) ?? "Unknown";
+        const longTitle = strcan(titleElement?.attributes?.title?.value) ?? shortTitle;
+
+        let teacherShort: string | undefined;
+        let classroom: string | undefined;
+        let teacherLong: string | undefined;
 
         const subtitleElements = [
             ...target.querySelectorAll(".ednevnik-subtitle"),
@@ -144,11 +149,25 @@ export class Parser {
 
         const teacherAndClassroom = teacherAndRoomElement?.innerText
             ?.split(", ")
-            ?.map((x) => x.trim());
+            ?.map((x) => x.trim()) ?? [];
 
-        const teacherShort = teacherAndClassroom?.[0]?.trim();
-        const classroom = teacherAndClassroom?.[1]?.trim();
-        const teacherLong = teacherAndRoomElement?.title?.trim();
+        if (teacherAndClassroom.length === 2) {
+            teacherShort = strcan(teacherAndClassroom?.[0]);
+            classroom = strcan(teacherAndClassroom?.[1]);
+            teacherLong = strcan(teacherAndRoomElement?.title);
+        } else if (teacherAndRoomElement) {
+            // **Ucilnice** ${ucilnice} workaround for "dogodek"
+            const olderSibling = teacherAndRoomElement.previousElementSibling as HTMLDivElement;
+            if (olderSibling.className === 'ednevnik-title') {
+                const potentialClassrooms = teacherAndRoomElement.innerText.split(',').map(x => x.trim()).filter(x => x && x.length > 0);
+
+                if (potentialClassrooms.length === 1) {
+                    classroom = strcan(potentialClassrooms[0]);
+                } else {
+                    console.error("Could not parse classroom for", { dayIndex, key, periodIndex });
+                }
+            }
+        }
 
         const flags = new Set(flagElements.flatMap((x) => [...x.classList]))
             .values()
@@ -156,7 +175,7 @@ export class Parser {
             .filter<EventFlag>((x) => !!x)
             .toArray();
 
-        const groups = groupElements.map((x) => x.innerText.trim());
+        const groups = groupElements.map((x) => strcan(x.innerText)).filter((x) => typeof x === "string");
 
         return {
             dayIndex,
