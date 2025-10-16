@@ -83,7 +83,9 @@ function generateDateProperty(prop: string, d: Date) {
 export function generateCalendar<TEv extends Event>(e: TEv[]): string {
     const l = [...ICAL_HEADER];
 
-    e.forEach((x) => addEvent(l, x));
+    e.forEach((x) => {
+        addEvent(l, x);
+    });
 
     l.push(ICAL_END);
 

@@ -2,15 +2,15 @@
     "name": "easistent-tt",
     "module": "src/index.ts",
     "type": "module",
-    "version": "4.3.1-i-love-my-computer",
+    "version": "4.4.0-evil-world",
     "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.8.3",
-        "@biomejs/biome": "2.0.6"
+        "@biomejs/biome": "2.2.6"
     },
     "dependencies": {
         "@elysiajs/swagger": "^1.2.2",
-        "@types/web": "^0.0.217",
+        "@types/web": "^0.0.279",
         "elysia": "^1.2.25",
         "linkedom": "^0.18.9",
         "slugify": "^1.6.6"
@@ -18,6 +18,7 @@
     "scripts": {
         "start": "bun src/index.ts",
         "dev": "bun --watch src/index.ts",
-        "lint": "eslint ."
+        "lint": "biome lint",
+        "format": "biome format --write"
     }
 }

@@ -7,13 +7,13 @@ export function getFlagName(flag: EventFlag, lang: Lang = "en", short: boolean):
     const FLAGNAMES: Record<Lang, Record<EventFlag, Record<1 | 0, string>>> = {
         en: {
             CANCELED: ["Canceled", "X"],
-            CLUB: ["Club", "Club"],
+            CLUB: ["Activity", "Act"],
             EVENT: ["Event", "Evt"],
-            HALFTIME: ["Half time", "1/2"],
-            NOTDONE: ["Not done", "ND"],
-            OFFICEHOURS: ["Office hours", "Office"],
-            REPLACEMENT: ["Replacement", "Rep"],
-            SUBSTITUTE: ["Substitute", "Sub"],
+            HALFTIME: ["Half hour", "1/2"],
+            NOTDONE: ["No Lesson", "NL"],
+            OFFICEHOURS: ["Parent Teacher conference", "PT"],
+            REPLACEMENT: ["Babysitting", "Rep"],
+            SUBSTITUTE: ["Substitution", "Sub"],
         },
         si: {
             CANCELED: ["Odpade", "X"],
@@ -45,13 +45,13 @@ export function getDescription(
 ) {
     const S = {
         en: {
-            group: "Group: ",
+            group: "Groups: ",
             teacher: "Teacher: ",
             class: "Class: ",
             room: "Classroom: ",
         },
         si: {
-            group: "Skupina: ",
+            group: "Skupine: ",
             teacher: "Učitelj: ",
             class: "Razred: ",
             room: "Učilnica: ",
@@ -68,8 +68,8 @@ export function getDescription(
     if (sclass) {
         lines.push(S[lang].class + sclass);
     }
-    if (ev.groupName) {
-        lines.push(S[lang].group + ev.groupName);
+    if (ev.groupNames.length > 0) {
+        lines.push(S[lang].group + ev.groupNames.join(", "));
     }
 
     return lines.join("\n");

@@ -1,34 +1,29 @@
-import type { HTMLImageElement } from "linkedom";
-
+/**
+ * Strings slightly differ from names:
+ * - string values are my guesses from a couple years ago.
+ * - names are stolen from the new `wl-tag-` classes.
+ */
 export enum EventFlag {
-    Substitute = "SUBSTITUTE",
-    Replacement = "REPLACEMENT",
-    Canceled = "CANCELED",
-    Notdone = "NOTDONE",
+    Substitution = "SUBSTITUTE",
+    Babysitting = "REPLACEMENT",
+    /**
+     * Typo lol
+     */
+    Cancelled = "CANCELED",
+    NoLesson = "NOTDONE",
     Event = "EVENT",
-    Officehours = "OFFICEHOURS",
-    Halftime = "HALFTIME",
-    Club = "CLUB",
+    ParentTeacher = "OFFICEHOURS",
+    HalfHour = "HALFTIME",
+    Activity = "CLUB",
 }
 
-const flagMap = new Map(
-    Object.entries({
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_zaposlitev.png":
-            EventFlag.Replacement,
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_nadomescanje.png":
-            EventFlag.Substitute,
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_odpadlo.png": EventFlag.Canceled,
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_neopravljeno.png":
-            EventFlag.Notdone,
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_dogodek.png": EventFlag.Event,
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_govorilne.png":
-            EventFlag.Officehours,
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_polovicna_ura.png":
-            EventFlag.Halftime,
-        "https://www.easistent.com/images/icons/ednevnik_seznam_ur_id.png": EventFlag.Club,
-    })
-);
-
-export function getFlags(imgs: HTMLImageElement[]): EventFlag[] {
-    return imgs.map((x) => flagMap.get(x.src)).filter((x) => x !== undefined) as EventFlag[];
-}
+export const FLAG_MAP: Readonly<Record<string, EventFlag | undefined>> = Object.freeze({
+    "wl-tag-substitution": EventFlag.Substitution,
+    "wl-tag-babysitting": EventFlag.Babysitting,
+    "wl-tag-cancelled": EventFlag.Cancelled,
+    "wl-tag-no-lesson": EventFlag.NoLesson,
+    "wl-tag-event": EventFlag.Event,
+    "wl-tag-parent-teacher": EventFlag.ParentTeacher,
+    "wl-tag-half-hour": EventFlag.HalfHour,
+    "wl-tag-activity": EventFlag.Activity,
+});
