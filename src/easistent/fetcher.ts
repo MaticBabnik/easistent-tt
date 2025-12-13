@@ -1,3 +1,5 @@
+import { version } from "../../package.json" with { type: "json" };
+
 export type TimetableRequestParams = {
     schoolId?: number;
     classId?: number;
@@ -13,7 +15,7 @@ export class Fetcher {
     private static readonly fetchOptions: RequestInit = {
         method: "GET",
         headers: {
-            "user-agent": "Mozilla/5.0 (easistent-tt, matic says hi)",
+            "user-agent": `Mozilla/5.0 (X11; Linux x86_64) EasistentTt/${version} (https://github.com/MaticBabnik/easistent-tt; Merry Christmas)`,
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             accept: "text/html",
         },
