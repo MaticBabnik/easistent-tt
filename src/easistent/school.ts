@@ -49,8 +49,11 @@ export type WeekData = {
     scrapedAt: number;
 };
 
-const DEFAULT_TTL = 30 * 60 * 1000;
-const SCRAPE_INTERVAL = DEFAULT_TTL - 30_000;
+const HOUR = 1000 * 60 * 60;
+const DEFAULT_TTL = 2 * HOUR;
+const SCRAPE_INTERVAL = HOUR - 30_000;
+
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export class School {
     public errors: SchoolError[] = [];
@@ -370,17 +373,33 @@ export class School {
         if (this.asRunning) return;
         this.asRunning = true;
 
-        const as = () => {
-            console.log("Refreshing cache");
+        /**
+         * Scrape surrounding weeks half as often
+         * starts as false but will get flipped on first run
+         */
+        let scrapeSurrounding = false;
+
+        const as = async () => {
             const week = this.getWeekForDate();
+
+            scrapeSurrounding = !scrapeSurrounding;
+            console.log(`Refreshing cache, surrounding=${scrapeSurrounding}`);
+
+            if (!scrapeSurrounding) {
+                await this.getWeek(week, true);
+                return;
+            }
 
             const from = Math.max(1, week - 1);
             const to = Math.min(52, week + 1);
 
             for (let i = from; i <= to; i++) {
-                this.getWeek(i, true);
+                // biome-ignore lint/performance/noAwaitInLoops: intentional
+                await this.getWeek(i, true);
+                delay(3333); // be nice to the server
             }
         };
+
         setInterval(as, SCRAPE_INTERVAL);
         as();
     }
