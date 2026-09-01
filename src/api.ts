@@ -1,6 +1,7 @@
 import { Elysia, t } from "elysia";
 import { at } from "./apiTypes";
 import { School, type WeekData } from "./easistent/school";
+import { applyStartupBackoff } from "./util/backoff";
 import type { Lang } from "./util/lang";
 
 const schoolId = globalThis.process.env.SCHOOL_ID;
@@ -8,6 +9,8 @@ const schoolKey = globalThis.process.env.SCHOOL_KEY;
 if (!schoolId || !schoolKey) {
     throw new Error("Missing env vars");
 }
+
+await applyStartupBackoff();
 
 const s = new School(schoolId, schoolKey);
 await s.init();

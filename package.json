@@ -10,6 +10,7 @@
     },
     "dependencies": {
         "@elysiajs/swagger": "^1.2.2",
+        "@npy/fetch": "^0.1.5",
         "@types/web": "^0.0.279",
         "elysia": "^1.2.25",
         "linkedom": "^0.18.9",
