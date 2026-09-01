@@ -1,4 +1,5 @@
 import { version } from "../../package.json" with { type: "json" };
+import { fetch } from "@npy/fetch";
 
 export type TimetableRequestParams = {
     schoolId?: number;
