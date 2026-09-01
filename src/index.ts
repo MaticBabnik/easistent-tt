@@ -8,7 +8,7 @@ import { getBuildInfo } from "./util/buildInfo" with { type: "macro" };
 
 setTimeZone("Europe/Ljubljana"); // For now easistent is only available in Slovenia
 
-new Elysia()
+const elysia = new Elysia()
     .use(
         swagger({
             exclude: ["/", "/docs", "/docs/json"],
@@ -46,7 +46,7 @@ A nice-ish API for easistent's public timetables.
                     },
                 ],
             },
-        })
+        }),
     )
     .use(api)
     .get("/", ({ set }) => {
@@ -68,8 +68,15 @@ A nice-ish API for easistent's public timetables.
                 tags: ["Developer"],
             },
             response: Dev,
-        }
+        },
     )
     .listen({
         port: globalThis.process.env.PORT ?? 3000,
     });
+
+const col = (x: number) => `\x1b[${x}m`;
+console.log(
+    `\n${col(95)}Easistent-tt ${col(97)}${pkg.version}\n
+    ${col(92)}Live ${col(97)}& ${col(91)}alive ${col(97)}@ ${col(94)}${elysia.server?.protocol}://${elysia.server?.hostname}:${elysia.server?.port}
+${col(0)}`,
+);

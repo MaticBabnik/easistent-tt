@@ -1,5 +1,7 @@
 import { version } from "../../package.json" with { type: "json" };
-//import { fetch } from "@npy/fetch";
+
+const UA_MSG = process.env.UA_MSG ?? ":3";
+const UA = `Mozilla/5.0 (X11; Linux x86_64) EasistentTt/${version} (https://github.com/MaticBabnik/easistent-tt; ${UA_MSG})`;
 
 export type TimetableRequestParams = {
     schoolId?: number;
@@ -16,7 +18,7 @@ export class Fetcher {
     private static readonly fetchOptions: RequestInit = {
         method: "GET",
         headers: {
-            "user-agent": `Mozilla/5.0 (X11; Linux x86_64) EasistentTt/${version} (https://github.com/MaticBabnik/easistent-tt; Merry Christmas)`,
+            "user-agent": UA,
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             accept: "text/html",
         },
@@ -26,10 +28,13 @@ export class Fetcher {
 
     constructor(
         protected id: string,
-        protected key: string
+        protected key: string,
     ) {}
 
-    private checkStatus(r: Response, context?: Record<string, string | number>) {
+    private checkStatus(
+        r: Response,
+        context?: Record<string, string | number>,
+    ) {
         if (r.ok) return;
 
         const c = context
@@ -38,7 +43,9 @@ export class Fetcher {
                   .join(",")
             : "";
 
-        throw new Error(`Failed to fetch, got ${r.status} ${r.statusText} | ${c}`);
+        throw new Error(
+            `Failed to fetch, got ${r.status} ${r.statusText} | ${c}`,
+        );
     }
 
     private async genericGet(url: string) {
@@ -54,11 +61,15 @@ export class Fetcher {
     }
 
     public async getClassesPage() {
-        return await this.genericGet(`https://urniki.easistent.com/urniki/${this.key}`);
+        return await this.genericGet(
+            `https://urniki.easistent.com/urniki/${this.key}`,
+        );
     }
 
     public async getRoomsPage() {
-        return await this.genericGet(`https://urniki.easistent.com/urniki/${this.key}/ucilnice/0`);
+        return await this.genericGet(
+            `https://urniki.easistent.com/urniki/${this.key}/ucilnice/0`,
+        );
     }
 
     public async getTimetable(params: TimetableRequestParams) {
