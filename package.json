@@ -2,19 +2,18 @@
     "name": "easistent-tt",
     "module": "src/index.ts",
     "type": "module",
-    "version": "4.5.1-blagor",
+    "version": "4.5.2-kafanaholics",
     "devDependencies": {
         "bun-types": "latest",
-        "typescript": "^5.8.3",
-        "@biomejs/biome": "2.2.6"
+        "typescript": "^5.9.3",
+        "@biomejs/biome": "2.5.11"
     },
     "dependencies": {
-        "@elysiajs/swagger": "^1.2.2",
-        "@npy/fetch": "^0.1.5",
-        "@types/web": "^0.0.279",
-        "elysia": "^1.2.25",
-        "linkedom": "^0.18.9",
-        "slugify": "^1.6.6"
+        "@elysiajs/swagger": "^1.3.1",
+        "@types/web": "^0.0.354",
+        "elysia": "^1.4.30",
+        "linkedom": "^0.18.13",
+        "slugify": "^1.6.9"
     },
     "scripts": {
         "start": "bun src/index.ts",

@@ -16,12 +16,13 @@ RUN ["bun", "build", "--target=bun", "src/index.ts", "--outfile=index.js"]
 
 FROM oven/bun:slim
 
+ARG NODE_ENV=production
+
 WORKDIR /app
 
 COPY package.json .
 COPY --from=build /app/index.js .
 
-EXPOSE 3000
 ENV PORT=3000
 ENV SCHOOL_ID=182
 ENV SCHOOL_KEY="30a1b45414856e5598f2d137a5965d5a4ad36826"

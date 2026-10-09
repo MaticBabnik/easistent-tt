@@ -110,7 +110,11 @@ export class Parser {
     }
 
     private static getEvents(mainTable: HTMLElement, key: string): RawEvent[] {
-        return childrenInRange(mainTable, 1)
+        const tbody = mainTable.querySelector("tbody") as unknown as HTMLElement;
+
+        if (!tbody) throw new Error("Could not find table body!");
+
+        return childrenInRange(tbody)
             .flatMap((row, periodIndex) =>
                 childrenInRange(row, 1).flatMap((cell, dayIndex) =>
                     [...cell.querySelectorAll(".ednevnik-seznam_ur_teden-urnik")].map((target) => ({

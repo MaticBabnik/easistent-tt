@@ -10,11 +10,14 @@ if (!schoolId || !schoolKey) {
     throw new Error("Missing env vars");
 }
 
-await applyStartupBackoff();
-
 const s = new School(schoolId, schoolKey);
-await s.init();
-s.startAutoscrape();
+
+(async () => {
+    await applyStartupBackoff();
+
+    await s.init();
+    s.startAutoscrape();
+})();
 
 const weekHook = {
     query: t.Object({
@@ -23,7 +26,7 @@ const weekHook = {
                 description: "The week you want to fetch data for. (optional)",
                 minimum: 1,
                 maximum: 53,
-            })
+            }),
         ),
     }),
     transform({ query }: { query: Record<PropertyKey, unknown> }) {
@@ -82,7 +85,7 @@ export default new Elysia()
                 rooms: t.Array(at.Option),
                 name: t.String(),
             }),
-        }
+        },
     )
     .get(
         "/week",
@@ -97,7 +100,7 @@ export default new Elysia()
                 tags: ["Main"],
             },
             response: t.Object({ week: at.WeekData, currentWeek: t.Number() }),
-        }
+        },
     )
     .get("/errors", () => ({ errors: s.errors }), {
         detail: {
@@ -137,7 +140,11 @@ export default new Elysia()
     .get(
         "/ical/:type/:id",
         ({ params: { type, id }, query: { lang } }) => {
-            return s.ical(type as "teachers" | "classes" | "rooms", id, lang as Lang | undefined);
+            return s.ical(
+                type as "teachers" | "classes" | "rooms",
+                id,
+                lang as Lang | undefined,
+            );
         },
         {
             detail: {
@@ -155,5 +162,5 @@ export default new Elysia()
             query: t.Object({
                 lang: t.Optional(t.Enum({ en: "en", si: "si" })),
             }),
-        }
+        },
     );
