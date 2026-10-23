@@ -2,7 +2,7 @@
     "name": "easistent-tt",
     "module": "src/index.ts",
     "type": "module",
-    "version": "4.5.2-kafanaholics",
+    "version": "4.5.3-sj-bo",
     "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.9.3",

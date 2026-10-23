@@ -4,7 +4,6 @@ const UA_MSG = process.env.UA_MSG ?? ":3";
 const UA = `Mozilla/5.0 (X11; Linux x86_64) EasistentTt/${version} (https://github.com/MaticBabnik/easistent-tt; ${UA_MSG})`;
 
 export type TimetableRequestParams = {
-    schoolId?: number;
     classId?: number;
     teacherId?: number;
     studentId?: number;
@@ -75,14 +74,14 @@ export class Fetcher {
     public async getTimetable(params: TimetableRequestParams) {
         const url = [
             "https://urniki.easistent.com/urniki/ajax_urnik",
-            params.schoolId ?? this.id,
+            this.key, // used to be the numeric school id, now 403s
             params.classId ?? 0,
             params.teacherId ?? 0,
             params.studentId ?? 0,
             params.roomId ?? 0,
             params.week ?? 0,
             params.activityId ?? 0,
-            params.qversion ? `?_=${params.qversion}` : "",
+            params.qversion ?? "",
         ].join("/");
 
         const response = await fetch(url, Fetcher.fetchOptions);
